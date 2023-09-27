@@ -142,6 +142,7 @@ mod lwe_ciphertext_discarding_extraction;
 mod lwe_ciphertext_discarding_keyswitch;
 mod lwe_ciphertext_discarding_opposite;
 mod lwe_ciphertext_discarding_public_key_encryption;
+mod lwe_ciphertext_discarding_storing;
 mod lwe_ciphertext_discarding_subtraction;
 mod lwe_ciphertext_encryption;
 mod lwe_ciphertext_fusing_addition;
