@@ -223,6 +223,294 @@ impl CudaStream {
         cuda_synchronize_stream(self.stream.0);
     }
 
+    /// Discarding Boolean NOT on a vector of LWE ciphertexts
+    #[allow(clippy::too_many_arguments)]
+    pub unsafe fn discard_not_amortized_lwe_ciphertext_vector<T: UnsignedInteger>(
+        &self,
+        lwe_array_out: &mut CudaVec<T>,
+        lwe_array_in: &CudaVec<T>,
+        lwe_dimension: LweDimension,
+        num_samples: NumberOfSamples,
+    ) {
+        if T::BITS == 32 {
+            cuda_boolean_not_32(
+                self.stream.0,
+                self.gpu_index.0 as u32,
+                lwe_array_out.as_mut_c_ptr(),
+                lwe_array_in.as_c_ptr(),
+                lwe_dimension.0 as u32,
+                num_samples.0 as u32,
+            );
+        } else if T::BITS == 64 {
+            panic!("Boolean gates with 64-bit ctxts are not supported!");
+        }
+        cuda_synchronize_stream(self.stream.0);
+    }
+
+    /// Discarding Boolean AND between two vectors of LWE ciphertexts
+    #[allow(clippy::too_many_arguments)]
+    pub unsafe fn discard_and_amortized_lwe_ciphertext_vector<T: UnsignedInteger>(
+        &self,
+        lwe_array_out: &mut CudaVec<T>,
+        lwe_array_in_1: &CudaVec<T>,
+        lwe_array_in_2: &CudaVec<T>,
+        bootstrapping_key: &CudaVec<f64>,
+        keyswitch_key: &CudaVec<T>,
+        lwe_dimension: LweDimension,
+        glwe_dimension: GlweDimension,
+        polynomial_size: PolynomialSize,
+        pbs_base_log: DecompositionBaseLog,
+        pbs_level: DecompositionLevelCount,
+        ksk_base_log: DecompositionBaseLog,
+        ksk_level: DecompositionLevelCount,
+        num_samples: NumberOfSamples,
+        max_shared_memory: SharedMemoryAmount,
+    ) {
+        if T::BITS == 32 {
+            cuda_boolean_and_32(
+                self.stream.0,
+                self.gpu_index.0 as u32,
+                lwe_array_out.as_mut_c_ptr(),
+                lwe_array_in_1.as_c_ptr(),
+                lwe_array_in_2.as_c_ptr(),
+                bootstrapping_key.as_c_ptr(),
+                keyswitch_key.as_c_ptr(),
+                lwe_dimension.0 as u32,
+                glwe_dimension.0 as u32,
+                polynomial_size.0 as u32,
+                pbs_base_log.0 as u32,
+                pbs_level.0 as u32,
+                ksk_base_log.0 as u32,
+                ksk_level.0 as u32,
+                num_samples.0 as u32,
+                max_shared_memory.0 as u32,
+            );
+        } else if T::BITS == 64 {
+            panic!("Boolean gates with 64-bit ctxts are not supported!");
+        }
+        cuda_synchronize_stream(self.stream.0);
+    }
+
+    /// Discarding Boolean NAND between two vectors of LWE ciphertexts
+    #[allow(clippy::too_many_arguments)]
+    pub unsafe fn discard_nand_amortized_lwe_ciphertext_vector<T: UnsignedInteger>(
+        &self,
+        lwe_array_out: &mut CudaVec<T>,
+        lwe_array_in_1: &CudaVec<T>,
+        lwe_array_in_2: &CudaVec<T>,
+        bootstrapping_key: &CudaVec<f64>,
+        keyswitch_key: &CudaVec<T>,
+        lwe_dimension: LweDimension,
+        glwe_dimension: GlweDimension,
+        polynomial_size: PolynomialSize,
+        pbs_base_log: DecompositionBaseLog,
+        pbs_level: DecompositionLevelCount,
+        ksk_base_log: DecompositionBaseLog,
+        ksk_level: DecompositionLevelCount,
+        num_samples: NumberOfSamples,
+        max_shared_memory: SharedMemoryAmount,
+    ) {
+        if T::BITS == 32 {
+            cuda_boolean_nand_32(
+                self.stream.0,
+                self.gpu_index.0 as u32,
+                lwe_array_out.as_mut_c_ptr(),
+                lwe_array_in_1.as_c_ptr(),
+                lwe_array_in_2.as_c_ptr(),
+                bootstrapping_key.as_c_ptr(),
+                keyswitch_key.as_c_ptr(),
+                lwe_dimension.0 as u32,
+                glwe_dimension.0 as u32,
+                polynomial_size.0 as u32,
+                pbs_base_log.0 as u32,
+                pbs_level.0 as u32,
+                ksk_base_log.0 as u32,
+                ksk_level.0 as u32,
+                num_samples.0 as u32,
+                max_shared_memory.0 as u32,
+            );
+        } else if T::BITS == 64 {
+            panic!("Boolean gates with 64-bit ctxts are not supported!");
+        }
+        cuda_synchronize_stream(self.stream.0);
+    }
+
+    /// Discarding Boolean OR between two vectors of LWE ciphertexts
+    #[allow(clippy::too_many_arguments)]
+    pub unsafe fn discard_or_amortized_lwe_ciphertext_vector<T: UnsignedInteger>(
+        &self,
+        lwe_array_out: &mut CudaVec<T>,
+        lwe_array_in_1: &CudaVec<T>,
+        lwe_array_in_2: &CudaVec<T>,
+        bootstrapping_key: &CudaVec<f64>,
+        keyswitch_key: &CudaVec<T>,
+        lwe_dimension: LweDimension,
+        glwe_dimension: GlweDimension,
+        polynomial_size: PolynomialSize,
+        pbs_base_log: DecompositionBaseLog,
+        pbs_level: DecompositionLevelCount,
+        ksk_base_log: DecompositionBaseLog,
+        ksk_level: DecompositionLevelCount,
+        num_samples: NumberOfSamples,
+        max_shared_memory: SharedMemoryAmount,
+    ) {
+        if T::BITS == 32 {
+            cuda_boolean_or_32(
+                self.stream.0,
+                self.gpu_index.0 as u32,
+                lwe_array_out.as_mut_c_ptr(),
+                lwe_array_in_1.as_c_ptr(),
+                lwe_array_in_2.as_c_ptr(),
+                bootstrapping_key.as_c_ptr(),
+                keyswitch_key.as_c_ptr(),
+                lwe_dimension.0 as u32,
+                glwe_dimension.0 as u32,
+                polynomial_size.0 as u32,
+                pbs_base_log.0 as u32,
+                pbs_level.0 as u32,
+                ksk_base_log.0 as u32,
+                ksk_level.0 as u32,
+                num_samples.0 as u32,
+                max_shared_memory.0 as u32,
+            );
+        } else if T::BITS == 64 {
+            panic!("Boolean gates with 64-bit ctxts are not supported!");
+        }
+        cuda_synchronize_stream(self.stream.0);
+    }
+
+    /// Discarding Boolean NOR between two vectors of LWE ciphertexts
+    #[allow(clippy::too_many_arguments)]
+    pub unsafe fn discard_nor_amortized_lwe_ciphertext_vector<T: UnsignedInteger>(
+        &self,
+        lwe_array_out: &mut CudaVec<T>,
+        lwe_array_in_1: &CudaVec<T>,
+        lwe_array_in_2: &CudaVec<T>,
+        bootstrapping_key: &CudaVec<f64>,
+        keyswitch_key: &CudaVec<T>,
+        lwe_dimension: LweDimension,
+        glwe_dimension: GlweDimension,
+        polynomial_size: PolynomialSize,
+        pbs_base_log: DecompositionBaseLog,
+        pbs_level: DecompositionLevelCount,
+        ksk_base_log: DecompositionBaseLog,
+        ksk_level: DecompositionLevelCount,
+        num_samples: NumberOfSamples,
+        max_shared_memory: SharedMemoryAmount,
+    ) {
+        if T::BITS == 32 {
+            cuda_boolean_nor_32(
+                self.stream.0,
+                self.gpu_index.0 as u32,
+                lwe_array_out.as_mut_c_ptr(),
+                lwe_array_in_1.as_c_ptr(),
+                lwe_array_in_2.as_c_ptr(),
+                bootstrapping_key.as_c_ptr(),
+                keyswitch_key.as_c_ptr(),
+                lwe_dimension.0 as u32,
+                glwe_dimension.0 as u32,
+                polynomial_size.0 as u32,
+                pbs_base_log.0 as u32,
+                pbs_level.0 as u32,
+                ksk_base_log.0 as u32,
+                ksk_level.0 as u32,
+                num_samples.0 as u32,
+                max_shared_memory.0 as u32,
+            );
+        } else if T::BITS == 64 {
+            panic!("Boolean gates with 64-bit ctxts are not supported!");
+        }
+        cuda_synchronize_stream(self.stream.0);
+    }
+
+    /// Discarding Boolean XOR between two vectors of LWE ciphertexts
+    #[allow(clippy::too_many_arguments)]
+    pub unsafe fn discard_xor_amortized_lwe_ciphertext_vector<T: UnsignedInteger>(
+        &self,
+        lwe_array_out: &mut CudaVec<T>,
+        lwe_array_in_1: &CudaVec<T>,
+        lwe_array_in_2: &CudaVec<T>,
+        bootstrapping_key: &CudaVec<f64>,
+        keyswitch_key: &CudaVec<T>,
+        lwe_dimension: LweDimension,
+        glwe_dimension: GlweDimension,
+        polynomial_size: PolynomialSize,
+        pbs_base_log: DecompositionBaseLog,
+        pbs_level: DecompositionLevelCount,
+        ksk_base_log: DecompositionBaseLog,
+        ksk_level: DecompositionLevelCount,
+        num_samples: NumberOfSamples,
+        max_shared_memory: SharedMemoryAmount,
+    ) {
+        if T::BITS == 32 {
+            cuda_boolean_xor_32(
+                self.stream.0,
+                self.gpu_index.0 as u32,
+                lwe_array_out.as_mut_c_ptr(),
+                lwe_array_in_1.as_c_ptr(),
+                lwe_array_in_2.as_c_ptr(),
+                bootstrapping_key.as_c_ptr(),
+                keyswitch_key.as_c_ptr(),
+                lwe_dimension.0 as u32,
+                glwe_dimension.0 as u32,
+                polynomial_size.0 as u32,
+                pbs_base_log.0 as u32,
+                pbs_level.0 as u32,
+                ksk_base_log.0 as u32,
+                ksk_level.0 as u32,
+                num_samples.0 as u32,
+                max_shared_memory.0 as u32,
+            );
+        } else if T::BITS == 64 {
+            panic!("Boolean gates with 64-bit ctxts are not supported!");
+        }
+        cuda_synchronize_stream(self.stream.0);
+    }
+
+    /// Discarding Boolean XNOR between two vectors of LWE ciphertexts
+    #[allow(clippy::too_many_arguments)]
+    pub unsafe fn discard_xnor_amortized_lwe_ciphertext_vector<T: UnsignedInteger>(
+        &self,
+        lwe_array_out: &mut CudaVec<T>,
+        lwe_array_in_1: &CudaVec<T>,
+        lwe_array_in_2: &CudaVec<T>,
+        bootstrapping_key: &CudaVec<f64>,
+        keyswitch_key: &CudaVec<T>,
+        lwe_dimension: LweDimension,
+        glwe_dimension: GlweDimension,
+        polynomial_size: PolynomialSize,
+        pbs_base_log: DecompositionBaseLog,
+        pbs_level: DecompositionLevelCount,
+        ksk_base_log: DecompositionBaseLog,
+        ksk_level: DecompositionLevelCount,
+        num_samples: NumberOfSamples,
+        max_shared_memory: SharedMemoryAmount,
+    ) {
+        if T::BITS == 32 {
+            cuda_boolean_xnor_32(
+                self.stream.0,
+                self.gpu_index.0 as u32,
+                lwe_array_out.as_mut_c_ptr(),
+                lwe_array_in_1.as_c_ptr(),
+                lwe_array_in_2.as_c_ptr(),
+                bootstrapping_key.as_c_ptr(),
+                keyswitch_key.as_c_ptr(),
+                lwe_dimension.0 as u32,
+                glwe_dimension.0 as u32,
+                polynomial_size.0 as u32,
+                pbs_base_log.0 as u32,
+                pbs_level.0 as u32,
+                ksk_base_log.0 as u32,
+                ksk_level.0 as u32,
+                num_samples.0 as u32,
+                max_shared_memory.0 as u32,
+            );
+        } else if T::BITS == 64 {
+            panic!("Boolean gates with 64-bit ctxts are not supported!");
+        }
+        cuda_synchronize_stream(self.stream.0);
+    }
+
     /// Discarding bootstrap on a vector of LWE ciphertexts
     #[allow(clippy::too_many_arguments)]
     pub unsafe fn discard_bootstrap_amortized_lwe_ciphertext_vector<T: UnsignedInteger>(
