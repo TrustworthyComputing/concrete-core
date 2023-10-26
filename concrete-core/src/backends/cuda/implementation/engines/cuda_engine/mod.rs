@@ -1,7 +1,7 @@
 use crate::backends::cuda::private::device::{CudaStream, GpuIndex, NumberOfGpus};
 use crate::prelude::sealed::AbstractEngineSeal;
 use crate::prelude::{AbstractEngine, CudaError, SharedMemoryAmount};
-use concrete_cuda::cuda_bind::cuda_get_number_of_gpus;
+use concrete_cuda::cuda_bind::{cuda_get_number_of_gpus, cuda_get_number_of_sms};
 /// The main engine exposed by the cuda backend.
 ///
 /// This engine handles single-GPU and multi-GPU computations for the user. It always associates
@@ -13,10 +13,13 @@ use concrete_cuda::cuda_bind::cuda_get_number_of_gpus;
 // A finer access to streams could allow for more overlapping of computations
 // on a given device. We'll probably want to support it in the future, in an AdvancedCudaEngine
 // for example.
+
 #[derive(Debug, Clone)]
 pub struct CudaEngine {
     streams: Vec<CudaStream>,
+    stream_idx: usize,
     max_shared_memory: usize,
+    number_of_gpus: usize,
 }
 
 impl AbstractEngineSeal for CudaEngine {}
@@ -31,15 +34,20 @@ impl AbstractEngine for CudaEngine {
         if number_of_gpus == 0 {
             Err(CudaError::DeviceNotFound)
         } else {
+            let number_of_sms = unsafe { cuda_get_number_of_sms(0) as usize };
             let mut streams: Vec<CudaStream> = Vec::new();
-            for gpu_index in 0..number_of_gpus {
-                streams.push(CudaStream::new(GpuIndex(gpu_index))?);
+            for gpu_index in 0..(number_of_gpus*number_of_sms) {
+                let curr_gpu : usize = gpu_index / number_of_sms;
+                streams.push(CudaStream::new(GpuIndex(curr_gpu))?);
             }
             let max_shared_memory = streams[0].get_max_shared_memory()?;
+            let stream_idx = 0;
 
             Ok(CudaEngine {
                 streams,
+                stream_idx: stream_idx as usize,
                 max_shared_memory: max_shared_memory as usize,
+                number_of_gpus: number_of_gpus as usize,
             })
         }
     }
@@ -48,11 +56,19 @@ impl AbstractEngine for CudaEngine {
 impl CudaEngine {
     /// Get the number of available GPUs from the engine
     pub fn get_number_of_gpus(&self) -> NumberOfGpus {
-        NumberOfGpus(self.streams.len())
+        NumberOfGpus(self.number_of_gpus)
     }
     /// Get the Cuda streams from the engine
     pub fn get_cuda_streams(&self) -> &Vec<CudaStream> {
         &self.streams
+    }
+    /// Get the current stream index from the engine
+    pub fn get_curr_stream_idx(&self) -> usize {
+        self.stream_idx
+    }
+    /// Increment current stream index 
+    pub fn inc_stream_idx(&mut self) {
+        self.stream_idx = (self.stream_idx + 1) % self.streams.len();
     }
     /// Get the size of the shared memory (on device 0)
     pub fn get_cuda_shared_memory(&self) -> SharedMemoryAmount {

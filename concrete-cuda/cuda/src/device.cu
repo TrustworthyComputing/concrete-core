@@ -2,19 +2,52 @@
 #include <cstdint>
 #include <cstdio>
 #include <cuda_runtime.h>
+#include <vector>
 
 /// Unsafe function to create a CUDA stream, must check first that GPU exists
-cudaStream_t *cuda_create_stream(uint32_t gpu_index) {
+cudaStream_t*cuda_create_stream(uint32_t gpu_index) {
   cudaSetDevice(gpu_index);
   cudaStream_t *stream = new cudaStream_t;
   cudaStreamCreate(stream);
   return stream;
 }
 
+/// Unsafe function to create CUDA streams for a single GPU, must check first that GPU exists
+std::vector<cudaStream_t*> cuda_create_streams(uint32_t gpu_index) {
+  cudaSetDevice(gpu_index);
+  cudaDeviceProp prop;
+  cudaGetDeviceProperties(&prop, 0);
+  uint32_t num_sms = prop.multiProcessorCount;
+  std::vector<cudaStream_t*> cuda_streams(num_sms);
+  for (uint32_t i = 0; i < num_sms; i++) {
+    cuda_streams[i] = new cudaStream_t;
+    cudaStreamCreate(cuda_streams[i]);
+  }
+  return cuda_streams;
+}
+
+/// Unsafe function to get the number of CUDA streams for a single GPU, must check first that GPU exists
+uint32_t cuda_get_number_of_sms(uint32_t gpu_index) {
+  cudaSetDevice(gpu_index);
+  cudaDeviceProp prop;
+  cudaGetDeviceProperties(&prop, 0);
+  uint32_t num_sms = prop.multiProcessorCount;
+  return num_sms;
+}
+
 /// Unsafe function to destroy CUDA stream, must check first the GPU exists
 int cuda_destroy_stream(cudaStream_t *stream, uint32_t gpu_index) {
   cudaSetDevice(gpu_index);
   cudaStreamDestroy(*stream);
+  return 0;
+}
+
+/// Unsafe function to destroy CUDA streams for a single GPU, must check first the GPU exists
+int cuda_destroy_streams(std::vector<cudaStream_t*> cuda_streams, uint32_t gpu_index) {
+  cudaSetDevice(gpu_index);
+  for (uint32_t i = 0; i < cuda_streams.size(); i++) {
+    cudaStreamDestroy(*cuda_streams[i]);
+  }
   return 0;
 }
 

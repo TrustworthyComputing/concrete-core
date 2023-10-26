@@ -32,7 +32,10 @@ int cuda_memcpy_to_gpu(void *dest, void *src, uint64_t size,
 
 int cuda_memcpy_async_to_cpu(void *dest, const void *src, uint64_t size,
                              cudaStream_t *stream, uint32_t gpu_index);
+
 int cuda_get_number_of_gpus();
+
+uint32_t cuda_get_number_of_sms(uint32_t gpu_index);
 
 int cuda_synchronize_device(uint32_t gpu_index);
 

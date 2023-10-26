@@ -48,7 +48,7 @@ impl
         bsk: &CudaFourierLweBootstrapKey32,
         ksk: &CudaLweKeyswitchKey32,
     ) {
-        self.streams[0].discard_nand_amortized_lwe_ciphertext_vector::<u32>(
+        self.streams[self.stream_idx].discard_nand_amortized_lwe_ciphertext_vector::<u32>(
             &mut output.0.d_vecs.get_mut(0).unwrap(),
             &input_1.0.d_vecs.get(0).unwrap(),
             &input_2.0.d_vecs.get(0).unwrap(),
@@ -64,5 +64,6 @@ impl
             NumberOfSamples(input_1.0.lwe_ciphertext_count.0),
             self.get_cuda_shared_memory(),
         );
+        self.inc_stream_idx();
     }
 }

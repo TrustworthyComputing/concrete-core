@@ -29,11 +29,12 @@ impl
         output: &mut CudaLweCiphertextVector32,
         input: &CudaLweCiphertextVector32,
     ) {
-        self.streams[0].discard_not_amortized_lwe_ciphertext_vector::<u32>(
+        self.streams[self.stream_idx].discard_not_amortized_lwe_ciphertext_vector::<u32>(
             &mut output.0.d_vecs.get_mut(0).unwrap(),
             &input.0.d_vecs.get(0).unwrap(),
             input.0.lwe_dimension,
             NumberOfSamples(input.0.lwe_ciphertext_count.0),
         );
+        self.inc_stream_idx();
     }
 }

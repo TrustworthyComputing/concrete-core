@@ -41,6 +41,9 @@ extern "C" {
     /// Get the total number of Nvidia GPUs detected on the platform
     pub fn cuda_get_number_of_gpus() -> i32;
 
+    /// Get the total number of SMs on GPU `gpu_index`
+    pub fn cuda_get_number_of_sms(gpu_index: u32) -> u32;
+
     /// Synchronize all streams on GPU `gpu_index`
     pub fn cuda_synchronize_device(gpu_index: u32) -> i32;
 
