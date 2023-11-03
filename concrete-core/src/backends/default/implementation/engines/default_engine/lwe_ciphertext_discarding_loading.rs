@@ -1,10 +1,7 @@
 use crate::backends::default::implementation::engines::DefaultEngine;
 use crate::backends::default::implementation::entities::{LweCiphertext32, LweCiphertext64};
 // use crate::commons::crypto::lwe::LweList as ImplLweList;
-use crate::commons::math::tensor::AsMutSlice;
-use crate::commons::math::tensor::AsMutTensor;
-use crate::commons::math::tensor::AsRefSlice;
-use crate::commons::math::tensor::AsRefTensor;
+use crate::commons::math::tensor::{AsMutSlice, AsMutTensor, AsRefSlice, AsRefTensor};
 use crate::prelude::{LweCiphertextIndex, LweCiphertextVector32, LweCiphertextVector64};
 use crate::specification::engines::{
     LweCiphertextDiscardingLoadingEngine, LweCiphertextDiscardingLoadingError,

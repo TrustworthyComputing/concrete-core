@@ -18,22 +18,19 @@ impl<EngineError: std::error::Error> LweCiphertextVectorDiscardingNotError<Engin
         InputCiphertextVector: LweCiphertextVectorEntity,
         OutputCiphertextVector: LweCiphertextVectorEntity,
     {
-        if output.lwe_dimension() != input.lwe_dimension()
-        {
+        if output.lwe_dimension() != input.lwe_dimension() {
             return Err(Self::LweDimensionMismatch);
         }
-        if output.lwe_ciphertext_count() != input.lwe_ciphertext_count()
-        {
+        if output.lwe_ciphertext_count() != input.lwe_ciphertext_count() {
             return Err(Self::CiphertextCountMismatch);
         }
         Ok(())
     }
 }
 
-pub trait LweCiphertextVectorDiscardingNotEngine<
-    InputCiphertextVector,
-    OutputCiphertextVector,
->: AbstractEngine where
+pub trait LweCiphertextVectorDiscardingNotEngine<InputCiphertextVector, OutputCiphertextVector>:
+    AbstractEngine
+where
     InputCiphertextVector: LweCiphertextVectorEntity,
     OutputCiphertextVector: LweCiphertextVectorEntity,
 {

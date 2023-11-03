@@ -7,6 +7,7 @@ use crate::commons::crypto::lwe::LweList;
 use crate::commons::math::tensor::{AsMutSlice, AsMutTensor, AsRefSlice, AsRefTensor};
 use crate::commons::numeric::UnsignedInteger;
 use crate::prelude::{CiphertextCount, LweCiphertextCount, LweDimension};
+use std::sync::{Arc, RwLock};
 
 /// An array of LWE ciphertexts in the GPU.
 ///
@@ -35,7 +36,7 @@ pub(crate) struct CudaLweList<T: UnsignedInteger> {
 }
 
 pub(crate) unsafe fn copy_lwe_ciphertext_vector_from_cpu_to_gpu<T: UnsignedInteger, Cont>(
-    streams: &[CudaStream],
+    streams: &Vec<Arc<RwLock<CudaStream>>>,
     input: &LweList<Cont>,
     number_of_available_gpus: NumberOfGpus,
 ) -> Vec<CudaVec<T>>
@@ -50,7 +51,7 @@ where
         compute_number_of_samples_on_gpu(number_of_gpus, input.count(), GpuIndex(0));
     let data_per_gpu = samples_on_gpu_0.0 * input.lwe_size().0;
     for (gpu_index, chunk) in input_slice.chunks_exact(data_per_gpu).enumerate() {
-        let stream = &streams[gpu_index];
+        let stream = &streams[gpu_index].write().unwrap();
         if gpu_index == number_of_gpus.0 - 1 {
             let chunk_and_remainder =
                 [chunk, input_slice.chunks_exact(data_per_gpu).remainder()].concat();
@@ -69,7 +70,7 @@ where
 }
 
 pub(crate) unsafe fn copy_lwe_ciphertext_vector_from_gpu_to_cpu<T: UnsignedInteger>(
-    streams: &[CudaStream],
+    streams: &Vec<Arc<RwLock<CudaStream>>>,
     input: &CudaLweList<T>,
     number_of_available_gpus: NumberOfGpus,
 ) -> Vec<T> {
@@ -83,12 +84,12 @@ pub(crate) unsafe fn copy_lwe_ciphertext_vector_from_gpu_to_cpu<T: UnsignedInteg
     let mut output =
         vec![T::ZERO; input.lwe_dimension.to_lwe_size().0 * input.lwe_ciphertext_count.0];
     for (gpu_index, chunks) in output.chunks_exact_mut(data_per_gpu).enumerate() {
-        let stream = &streams[gpu_index];
+        let stream = &streams[gpu_index].write().unwrap();
         stream.copy_to_cpu::<T>(chunks, input.d_vecs.get(gpu_index).unwrap());
     }
     if samples_per_gpu.0 * number_of_available_gpus.0 < input.lwe_ciphertext_count.0 {
         let last_chunk = output.chunks_exact_mut(data_per_gpu).into_remainder();
-        let last_stream = streams.last().unwrap();
+        let last_stream = streams.last().unwrap().write().unwrap();
         last_stream.copy_to_cpu::<T>(last_chunk, input.d_vecs.last().unwrap());
     }
     output
@@ -96,7 +97,7 @@ pub(crate) unsafe fn copy_lwe_ciphertext_vector_from_gpu_to_cpu<T: UnsignedInteg
 
 pub(crate) unsafe fn discard_copy_lwe_ciphertext_vector_from_gpu_to_cpu<T: UnsignedInteger>(
     output: &mut LweList<&mut [T]>,
-    streams: &[CudaStream],
+    streams: &Vec<Arc<RwLock<CudaStream>>>,
     input: &CudaLweList<T>,
     number_of_available_gpus: NumberOfGpus,
 ) {
@@ -113,7 +114,7 @@ pub(crate) unsafe fn discard_copy_lwe_ciphertext_vector_from_gpu_to_cpu<T: Unsig
         .chunks_exact_mut(data_per_gpu)
         .enumerate()
     {
-        let stream = &streams[gpu_index];
+        let stream = &streams[gpu_index].write().unwrap();
         stream.copy_to_cpu::<T>(chunks, input.d_vecs.get(gpu_index).unwrap());
     }
     if samples_per_gpu.0 * number_of_available_gpus.0 < input.lwe_ciphertext_count.0 {
@@ -122,13 +123,13 @@ pub(crate) unsafe fn discard_copy_lwe_ciphertext_vector_from_gpu_to_cpu<T: Unsig
             .as_mut_slice()
             .chunks_exact_mut(data_per_gpu)
             .into_remainder();
-        let last_stream = streams.last().unwrap();
+        let last_stream = streams.last().unwrap().write().unwrap();
         last_stream.copy_to_cpu::<T>(last_chunk, input.d_vecs.last().unwrap());
     }
 }
 
 pub(crate) unsafe fn execute_lwe_ciphertext_vector_opposite_on_gpu<T: UnsignedInteger>(
-    streams: &[CudaStream],
+    streams: &Vec<Arc<RwLock<CudaStream>>>,
     output: &mut CudaLweList<T>,
     input: &CudaLweList<T>,
     number_of_available_gpus: NumberOfGpus,
@@ -144,7 +145,7 @@ pub(crate) unsafe fn execute_lwe_ciphertext_vector_opposite_on_gpu<T: UnsignedIn
             CiphertextCount(input.lwe_ciphertext_count.0),
             GpuIndex(gpu_index),
         );
-        let stream = &streams.get(gpu_index).unwrap();
+        let stream = &*streams.get(gpu_index).unwrap().write().unwrap();
 
         stream.discard_opp_lwe_ciphertext_vector::<T>(
             output.d_vecs.get_mut(gpu_index).unwrap(),
@@ -155,7 +156,7 @@ pub(crate) unsafe fn execute_lwe_ciphertext_vector_opposite_on_gpu<T: UnsignedIn
     }
 }
 pub(crate) unsafe fn execute_lwe_ciphertext_vector_addition_on_gpu<T: UnsignedInteger>(
-    streams: &[CudaStream],
+    streams: &Vec<Arc<RwLock<CudaStream>>>,
     output: &mut CudaLweList<T>,
     input_1: &CudaLweList<T>,
     input_2: &CudaLweList<T>,
@@ -172,7 +173,7 @@ pub(crate) unsafe fn execute_lwe_ciphertext_vector_addition_on_gpu<T: UnsignedIn
             CiphertextCount(input_1.lwe_ciphertext_count.0),
             GpuIndex(gpu_index),
         );
-        let stream = &streams.get(gpu_index).unwrap();
+        let stream = &streams.get(gpu_index).unwrap().write().unwrap();
 
         stream.discard_add_lwe_ciphertext_vector::<T>(
             output.d_vecs.get_mut(gpu_index).unwrap(),
@@ -187,7 +188,7 @@ pub(crate) unsafe fn execute_lwe_ciphertext_vector_addition_on_gpu<T: UnsignedIn
 pub(crate) unsafe fn execute_lwe_ciphertext_vector_plaintext_vector_addition_on_gpu<
     T: UnsignedInteger,
 >(
-    streams: &[CudaStream],
+    streams: &CudaStream,
     output: &mut CudaLweList<T>,
     input: &CudaLweList<T>,
     plaintext_input: &CudaPlaintextList<T>,
@@ -204,9 +205,7 @@ pub(crate) unsafe fn execute_lwe_ciphertext_vector_plaintext_vector_addition_on_
             CiphertextCount(input.lwe_ciphertext_count.0),
             GpuIndex(gpu_index),
         );
-        let stream = &streams.get(gpu_index).unwrap();
-
-        stream.discard_add_lwe_ciphertext_vector_plaintext_vector::<T>(
+        streams.discard_add_lwe_ciphertext_vector_plaintext_vector::<T>(
             output.d_vecs.get_mut(gpu_index).unwrap(),
             input.d_vecs.get(gpu_index).unwrap(),
             plaintext_input.d_vecs.get(gpu_index).unwrap(),
@@ -219,7 +218,7 @@ pub(crate) unsafe fn execute_lwe_ciphertext_vector_plaintext_vector_addition_on_
 pub(crate) unsafe fn execute_lwe_ciphertext_vector_cleartext_vector_multiplication_on_gpu<
     T: UnsignedInteger,
 >(
-    streams: &[CudaStream],
+    streams: &CudaStream,
     output: &mut CudaLweList<T>,
     input: &CudaLweList<T>,
     cleartext_input: &CudaCleartextList<T>,
@@ -236,9 +235,7 @@ pub(crate) unsafe fn execute_lwe_ciphertext_vector_cleartext_vector_multiplicati
             CiphertextCount(input.lwe_ciphertext_count.0),
             GpuIndex(gpu_index),
         );
-        let stream = &streams.get(gpu_index).unwrap();
-
-        stream.discard_mult_lwe_ciphertext_vector_cleartext_vector::<T>(
+        streams.discard_mult_lwe_ciphertext_vector_cleartext_vector::<T>(
             output.d_vecs.get_mut(gpu_index).unwrap(),
             input.d_vecs.get(gpu_index).unwrap(),
             cleartext_input.d_vecs.get(gpu_index).unwrap(),

@@ -30,7 +30,7 @@ impl PlaintextVectorConversionEngine<PlaintextVector32, CudaPlaintextVector32> f
             CiphertextCount(input.plaintext_count().0),
         );
         for gpu_index in 0..number_of_gpus.0 {
-            let stream = &self.streams[gpu_index];
+            let stream = &*self.streams[gpu_index].read().unwrap();
             let samples = compute_number_of_samples_on_gpu(
                 self.get_number_of_gpus(),
                 CiphertextCount(input.plaintext_count().0),
@@ -90,7 +90,7 @@ impl PlaintextVectorConversionEngine<PlaintextVector64, CudaPlaintextVector64> f
             CiphertextCount(input.plaintext_count().0),
         );
         for gpu_index in 0..number_of_gpus.0 {
-            let stream = &self.streams[gpu_index];
+            let stream = &*self.streams[gpu_index].read().unwrap();
             let samples = compute_number_of_samples_on_gpu(
                 self.get_number_of_gpus(),
                 CiphertextCount(input.plaintext_count().0),

@@ -5,6 +5,7 @@ use crate::commons::crypto::encoding::PlaintextList;
 use crate::commons::math::tensor::{AsMutSlice, AsMutTensor, AsRefSlice, AsRefTensor};
 use crate::commons::numeric::UnsignedInteger;
 use crate::prelude::{CiphertextCount, PlaintextCount};
+use std::sync::{Arc, RwLock};
 
 #[derive(Debug)]
 pub(crate) struct CudaPlaintextList<T: UnsignedInteger> {
@@ -18,7 +19,7 @@ pub(crate) unsafe fn copy_plaintext_vector_from_cpu_to_gpu<
     T: UnsignedInteger + std::fmt::Debug,
     Cont,
 >(
-    streams: &[CudaStream],
+    streams: &Vec<Arc<RwLock<CudaStream>>>,
     input: &PlaintextList<Cont>,
     number_of_available_gpus: NumberOfGpus,
 ) -> Vec<CudaVec<T>>
@@ -37,7 +38,7 @@ where
     )
     .0;
     for (gpu_index, chunk) in input_slice.chunks_exact(samples_on_gpu_0).enumerate() {
-        let stream = &streams[gpu_index];
+        let stream = &*streams[gpu_index].write().unwrap();
         if gpu_index == number_of_gpus.0 - 1 {
             let chunk_and_remainder = [
                 chunk,
@@ -59,7 +60,7 @@ where
 }
 
 pub(crate) unsafe fn copy_plaintext_vector_from_gpu_to_cpu<T: UnsignedInteger>(
-    streams: &[CudaStream],
+    streams: &Vec<Arc<RwLock<CudaStream>>>,
     input: &CudaPlaintextList<T>,
     number_of_available_gpus: NumberOfGpus,
 ) -> Vec<T> {
@@ -72,12 +73,12 @@ pub(crate) unsafe fn copy_plaintext_vector_from_gpu_to_cpu<T: UnsignedInteger>(
 
     let mut output = vec![T::ZERO; input.plaintext_count.0];
     for (gpu_index, chunks) in output.chunks_exact_mut(data_per_gpu).enumerate() {
-        let stream = &streams[gpu_index];
+        let stream = &*streams[gpu_index].write().unwrap();
         stream.copy_to_cpu::<T>(chunks, input.d_vecs.get(gpu_index).unwrap());
     }
     if data_per_gpu * number_of_available_gpus.0 < input.plaintext_count.0 {
         let last_chunk = output.chunks_exact_mut(data_per_gpu).into_remainder();
-        let last_stream = streams.last().unwrap();
+        let last_stream = &*streams.last().unwrap().write().unwrap();
         last_stream.copy_to_cpu::<T>(last_chunk, input.d_vecs.last().unwrap());
     }
     output
@@ -86,7 +87,7 @@ pub(crate) unsafe fn copy_plaintext_vector_from_gpu_to_cpu<T: UnsignedInteger>(
 #[allow(dead_code)]
 pub(crate) unsafe fn discard_copy_plaintext_vector_from_gpu_to_cpu<T: UnsignedInteger>(
     output: &mut PlaintextList<&mut [T]>,
-    streams: &[CudaStream],
+    streams: &Vec<Arc<RwLock<CudaStream>>>,
     input: &CudaPlaintextList<T>,
     number_of_available_gpus: NumberOfGpus,
 ) {
@@ -103,7 +104,7 @@ pub(crate) unsafe fn discard_copy_plaintext_vector_from_gpu_to_cpu<T: UnsignedIn
         .chunks_exact_mut(data_per_gpu)
         .enumerate()
     {
-        let stream = &streams[gpu_index];
+        let stream = &*streams[gpu_index].write().unwrap();
         stream.copy_to_cpu::<T>(chunks, input.d_vecs.get(gpu_index).unwrap());
     }
     if data_per_gpu * number_of_available_gpus.0 < input.plaintext_count.0 {
@@ -112,7 +113,7 @@ pub(crate) unsafe fn discard_copy_plaintext_vector_from_gpu_to_cpu<T: UnsignedIn
             .as_mut_slice()
             .chunks_exact_mut(data_per_gpu)
             .into_remainder();
-        let last_stream = streams.last().unwrap();
+        let last_stream = &*streams.last().unwrap().write().unwrap();
         last_stream.copy_to_cpu::<T>(last_chunk, input.d_vecs.last().unwrap());
     }
 }

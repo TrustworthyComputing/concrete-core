@@ -130,11 +130,12 @@ impl
         acc: &CudaGlweCiphertext32,
         bsk: &CudaFourierLweBootstrapKey32,
     ) {
-        let stream = self.streams.first().unwrap();
-        let mut test_vector_indexes = stream.malloc_async::<u32>(1);
-        stream.copy_to_gpu_async(&mut test_vector_indexes, &[0]);
+        let stream = &self.streams[self.get_curr_stream_idx()];
+        let stream_locked = stream.write().unwrap();
+        let mut test_vector_indexes = stream_locked.malloc_async::<u32>(1);
+        stream_locked.copy_to_gpu_async(&mut test_vector_indexes, &[0]);
 
-        stream.discard_bootstrap_low_latency_lwe_ciphertext_vector::<u32>(
+        stream_locked.discard_bootstrap_low_latency_lwe_ciphertext_vector::<u32>(
             &mut output.0.d_vec,
             &acc.0.d_vec,
             &test_vector_indexes,
@@ -265,11 +266,12 @@ impl
         acc: &CudaGlweCiphertext64,
         bsk: &CudaFourierLweBootstrapKey64,
     ) {
-        let stream = self.streams.first().unwrap();
-        let mut test_vector_indexes = stream.malloc_async::<u64>(1);
-        stream.copy_to_gpu_async(&mut test_vector_indexes, &[0]);
+        let stream = &self.streams[self.get_curr_stream_idx()];
+        let stream_locked = stream.write().unwrap();
+        let mut test_vector_indexes = stream_locked.malloc_async::<u64>(1);
+        stream_locked.copy_to_gpu_async(&mut test_vector_indexes, &[0]);
 
-        stream.discard_bootstrap_low_latency_lwe_ciphertext_vector::<u64>(
+        stream_locked.discard_bootstrap_low_latency_lwe_ciphertext_vector::<u64>(
             &mut output.0.d_vec,
             &acc.0.d_vec,
             &test_vector_indexes,

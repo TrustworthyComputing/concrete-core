@@ -68,7 +68,7 @@ impl GlweCiphertextVectorConversionEngine<GlweCiphertextVector32, CudaGlweCipher
         input: &GlweCiphertextVector32,
     ) -> Result<CudaGlweCiphertextVector32, GlweCiphertextVectorConversionError<CudaError>> {
         for gpu_index in 0..self.get_number_of_gpus().0 {
-            let stream = &self.streams[gpu_index];
+            let stream = &self.streams[gpu_index].read().unwrap();
             let data_per_gpu = input.glwe_dimension().to_glwe_size().0
                 * input.glwe_ciphertext_count().0
                 * input.polynomial_size().0;
@@ -88,7 +88,7 @@ impl GlweCiphertextVectorConversionEngine<GlweCiphertextVector32, CudaGlweCipher
             * input.glwe_dimension().to_glwe_size().0
             * input.polynomial_size().0;
         for gpu_index in 0..self.get_number_of_gpus().0 {
-            let stream = &self.streams[gpu_index];
+            let stream = &self.streams[gpu_index].write().unwrap();
             let mut vec = stream.malloc::<u32>(data_per_gpu as u32);
             let input_slice = input.0.as_tensor().as_slice();
             stream.copy_to_gpu::<u32>(&mut vec, input_slice);
@@ -166,7 +166,7 @@ impl GlweCiphertextVectorConversionEngine<CudaGlweCiphertextVector32, GlweCipher
                 * input.glwe_ciphertext_count().0
                 * input.polynomial_size().0
         ];
-        let stream = &self.streams[0];
+        let stream = &self.streams[0].write().unwrap();
         stream.copy_to_cpu::<u32>(&mut output, input.0.d_vecs.first().unwrap());
         GlweCiphertextVector32(GlweList::from_container(
             output,
@@ -224,7 +224,7 @@ impl GlweCiphertextVectorConversionEngine<GlweCiphertextVector64, CudaGlweCipher
         input: &GlweCiphertextVector64,
     ) -> Result<CudaGlweCiphertextVector64, GlweCiphertextVectorConversionError<CudaError>> {
         for gpu_index in 0..self.get_number_of_gpus().0 {
-            let stream = &self.streams[gpu_index];
+            let stream = &self.streams[gpu_index].read().unwrap();
             let data_per_gpu = input.glwe_dimension().to_glwe_size().0
                 * input.glwe_ciphertext_count().0
                 * input.polynomial_size().0;
@@ -244,7 +244,7 @@ impl GlweCiphertextVectorConversionEngine<GlweCiphertextVector64, CudaGlweCipher
             * input.glwe_dimension().to_glwe_size().0
             * input.polynomial_size().0;
         for gpu_index in 0..self.get_number_of_gpus().0 {
-            let stream = &self.streams[gpu_index];
+            let stream = &self.streams[gpu_index].write().unwrap();
             let mut vec = stream.malloc::<u64>(data_per_gpu as u32);
             let input_slice = input.0.as_tensor().as_slice();
             stream.copy_to_gpu::<u64>(&mut vec, input_slice);
@@ -322,7 +322,7 @@ impl GlweCiphertextVectorConversionEngine<CudaGlweCiphertextVector64, GlweCipher
                 * input.glwe_ciphertext_count().0
                 * input.polynomial_size().0
         ];
-        let stream = &self.streams[0];
+        let stream = &self.streams[0].write().unwrap();
         stream.copy_to_cpu::<u64>(&mut output, input.0.d_vecs.first().unwrap());
         GlweCiphertextVector64(GlweList::from_container(
             output,
@@ -389,7 +389,7 @@ impl
         input: &GlweCiphertextVectorView32,
     ) -> Result<CudaGlweCiphertextVector32, GlweCiphertextVectorConversionError<CudaError>> {
         for gpu_index in 0..self.get_number_of_gpus().0 {
-            let stream = &self.streams[gpu_index];
+            let stream = &self.streams[gpu_index].read().unwrap();
             let data_per_gpu = input.glwe_dimension().to_glwe_size().0
                 * input.glwe_ciphertext_count().0
                 * input.polynomial_size().0;
@@ -409,7 +409,7 @@ impl
             * input.glwe_dimension().to_glwe_size().0
             * input.polynomial_size().0;
         for gpu_index in 0..self.get_number_of_gpus().0 {
-            let stream = &self.streams[gpu_index];
+            let stream = &self.streams[gpu_index].write().unwrap();
             let mut vec = stream.malloc::<u32>(data_per_gpu as u32);
             let input_slice = input.0.as_tensor().as_slice();
             stream.copy_to_gpu::<u32>(&mut vec, input_slice);
@@ -481,7 +481,7 @@ impl
         input: &GlweCiphertextVectorView64,
     ) -> Result<CudaGlweCiphertextVector64, GlweCiphertextVectorConversionError<CudaError>> {
         for gpu_index in 0..self.get_number_of_gpus().0 {
-            let stream = &self.streams[gpu_index];
+            let stream = &self.streams[gpu_index].read().unwrap();
             let data_per_gpu = input.glwe_dimension().to_glwe_size().0
                 * input.glwe_ciphertext_count().0
                 * input.polynomial_size().0;
@@ -501,7 +501,7 @@ impl
             * input.glwe_dimension().to_glwe_size().0
             * input.polynomial_size().0;
         for gpu_index in 0..self.get_number_of_gpus().0 {
-            let stream = &self.streams[gpu_index];
+            let stream = &self.streams[gpu_index].write().unwrap();
             let mut vec = stream.malloc::<u64>(data_per_gpu as u32);
             let input_slice = input.0.as_tensor().as_slice();
             stream.copy_to_gpu::<u64>(&mut vec, input_slice);
@@ -589,7 +589,7 @@ impl
         input: &GlweCiphertextVectorMutView32,
     ) -> Result<CudaGlweCiphertextVector32, GlweCiphertextVectorConversionError<CudaError>> {
         for gpu_index in 0..self.get_number_of_gpus().0 {
-            let stream = &self.streams[gpu_index];
+            let stream = &self.streams[gpu_index].read().unwrap();
             let data_per_gpu = input.glwe_dimension().to_glwe_size().0
                 * input.glwe_ciphertext_count().0
                 * input.polynomial_size().0;
@@ -609,7 +609,7 @@ impl
             * input.glwe_dimension().to_glwe_size().0
             * input.polynomial_size().0;
         for gpu_index in 0..self.get_number_of_gpus().0 {
-            let stream = &self.streams[gpu_index];
+            let stream = &self.streams[gpu_index].write().unwrap();
             let mut vec = stream.malloc::<u32>(data_per_gpu as u32);
             let input_slice = input.0.as_tensor().as_slice();
             stream.copy_to_gpu::<u32>(&mut vec, input_slice);
@@ -697,7 +697,7 @@ impl
         input: &GlweCiphertextVectorMutView64,
     ) -> Result<CudaGlweCiphertextVector64, GlweCiphertextVectorConversionError<CudaError>> {
         for gpu_index in 0..self.get_number_of_gpus().0 {
-            let stream = &self.streams[gpu_index];
+            let stream = &self.streams[gpu_index].read().unwrap();
             let data_per_gpu = input.glwe_dimension().to_glwe_size().0
                 * input.glwe_ciphertext_count().0
                 * input.polynomial_size().0;
@@ -717,7 +717,7 @@ impl
             * input.glwe_dimension().to_glwe_size().0
             * input.polynomial_size().0;
         for gpu_index in 0..self.get_number_of_gpus().0 {
-            let stream = &self.streams[gpu_index];
+            let stream = &self.streams[gpu_index].write().unwrap();
             let mut vec = stream.malloc::<u64>(data_per_gpu as u32);
             let input_slice = input.0.as_tensor().as_slice();
             stream.copy_to_gpu::<u64>(&mut vec, input_slice);

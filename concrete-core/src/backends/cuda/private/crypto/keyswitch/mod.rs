@@ -9,6 +9,7 @@ use crate::prelude::{
     CiphertextCount, DecompositionBaseLog, DecompositionLevelCount,
     FunctionalPackingKeyswitchKeyCount, GlweDimension, LweDimension, PolynomialSize,
 };
+use std::sync::{Arc, RwLock};
 
 #[derive(Debug)]
 pub(crate) struct CudaLweKeyswitchKey<T: UnsignedInteger> {
@@ -28,7 +29,7 @@ unsafe impl<T> Send for CudaLweKeyswitchKey<T> where T: Send + UnsignedInteger {
 unsafe impl<T> Sync for CudaLweKeyswitchKey<T> where T: Sync + UnsignedInteger {}
 
 pub(crate) unsafe fn execute_lwe_ciphertext_vector_keyswitch_on_gpu<T: UnsignedInteger>(
-    streams: &[CudaStream],
+    streams: &CudaStream,
     output: &mut CudaLweList<T>,
     input: &CudaLweList<T>,
     ksk: &CudaLweKeyswitchKey<T>,
@@ -45,9 +46,8 @@ pub(crate) unsafe fn execute_lwe_ciphertext_vector_keyswitch_on_gpu<T: UnsignedI
             CiphertextCount(input.lwe_ciphertext_count.0),
             GpuIndex(gpu_index),
         );
-        let stream = &streams.get(gpu_index).unwrap();
 
-        stream.discard_keyswitch_lwe_ciphertext_vector::<T>(
+        streams.discard_keyswitch_lwe_ciphertext_vector::<T>(
             output.d_vecs.get_mut(gpu_index).unwrap(),
             input.d_vecs.get(gpu_index).unwrap(),
             input.lwe_dimension,
@@ -88,7 +88,7 @@ unsafe impl<T> Sync for CudaLwePrivateFunctionalPackingKeyswitchKeyList<T> where
 }
 
 pub(crate) unsafe fn execute_lwe_ciphertext_vector_fp_keyswitch_on_gpu<T: UnsignedInteger>(
-    streams: &[CudaStream],
+    streams: &Vec<Arc<RwLock<CudaStream>>>,
     output: &mut CudaGlweCiphertext<T>,
     input: &CudaLweList<T>,
     fp_ksk_list: &CudaLwePrivateFunctionalPackingKeyswitchKeyList<T>,
@@ -105,7 +105,7 @@ pub(crate) unsafe fn execute_lwe_ciphertext_vector_fp_keyswitch_on_gpu<T: Unsign
             CiphertextCount(input.lwe_ciphertext_count.0),
             GpuIndex(gpu_index),
         );
-        let stream = &streams.get(gpu_index).unwrap();
+        let stream = &streams.get(gpu_index).unwrap().write().unwrap();
 
         stream.discard_fp_keyswitch_lwe_to_glwe::<T>(
             &mut output.d_vec,

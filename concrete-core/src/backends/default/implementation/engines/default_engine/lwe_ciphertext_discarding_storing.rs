@@ -7,8 +7,8 @@ use crate::specification::engines::{
     LweCiphertextDiscardingStoringEngine, LweCiphertextDiscardingStoringError,
 };
 
-/// Implementation of [`LweCiphertextDiscardingStoringEngine`] for [`DefaultEngine`] which modifies an
-/// [`LweCiphertextVector64`].
+/// Implementation of [`LweCiphertextDiscardingStoringEngine`] for [`DefaultEngine`] which modifies
+/// an [`LweCiphertextVector64`].
 impl LweCiphertextDiscardingStoringEngine<LweCiphertext64, LweCiphertextVector64>
     for DefaultEngine
 {
@@ -41,8 +41,8 @@ impl LweCiphertextDiscardingStoringEngine<LweCiphertext64, LweCiphertextVector64
     }
 }
 
-/// Implementation of [`LweCiphertextDiscardingStoringEngine`] for [`DefaultEngine`] which modifies an
-/// [`LweCiphertextVector32`].
+/// Implementation of [`LweCiphertextDiscardingStoringEngine`] for [`DefaultEngine`] which modifies
+/// an [`LweCiphertextVector32`].
 impl LweCiphertextDiscardingStoringEngine<LweCiphertext32, LweCiphertextVector32>
     for DefaultEngine
 {

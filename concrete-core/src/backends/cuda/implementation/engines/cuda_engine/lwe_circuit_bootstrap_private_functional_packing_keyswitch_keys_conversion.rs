@@ -41,7 +41,7 @@ impl
                 * input.key_count().0;
 
             let size = data_per_gpu as u64 * std::mem::size_of::<u32>() as u64;
-            stream.check_device_memory(size)?;
+            stream.read().unwrap().check_device_memory(size)?;
         }
         Ok(unsafe {
             self.convert_lwe_circuit_bootstrap_private_functional_packing_keyswitch_keys_unchecked(
@@ -62,7 +62,8 @@ impl
             * input.output_polynomial_size().0
             * input.input_lwe_dimension().to_lwe_size().0
             * input.key_count().0;
-        for stream in self.streams.iter() {
+        for stream_id in 0..(self.get_number_of_gpus().0) {
+            let stream = self.get_cuda_streams()[stream_id].write().unwrap();
             let mut d_vec = stream.malloc::<u32>(data_per_gpu as u32);
             stream.copy_to_gpu(&mut d_vec, input.0.as_tensor().as_slice());
             d_vecs.push(d_vec);
@@ -113,7 +114,7 @@ impl
 
         // Copy the data from GPU 0 back to the CPU
         let mut output = vec![0u32; data_per_gpu];
-        let stream = self.streams.first().unwrap();
+        let stream = self.streams.first().unwrap().write().unwrap();
         stream.copy_to_cpu::<u32>(&mut output, input.0.d_vecs.first().unwrap());
 
         LweCircuitBootstrapPrivateFunctionalPackingKeyswitchKeys32(
@@ -150,7 +151,7 @@ impl
                 * input.input_lwe_dimension().to_lwe_size().0
                 * input.key_count().0;
             let size = data_per_gpu as u64 * std::mem::size_of::<u64>() as u64;
-            stream.check_device_memory(size)?;
+            stream.read().unwrap().check_device_memory(size)?;
         }
         Ok(unsafe {
             self.convert_lwe_circuit_bootstrap_private_functional_packing_keyswitch_keys_unchecked(
@@ -171,7 +172,8 @@ impl
             * input.output_polynomial_size().0
             * input.input_lwe_dimension().to_lwe_size().0
             * input.key_count().0;
-        for stream in self.streams.iter() {
+        for stream_id in 0..(self.get_number_of_gpus().0) {
+            let stream = self.get_cuda_streams()[stream_id].write().unwrap();
             let mut d_vec = stream.malloc::<u64>(data_per_gpu as u32);
             stream.copy_to_gpu(&mut d_vec, input.0.as_tensor().as_slice());
             d_vecs.push(d_vec);
@@ -222,7 +224,7 @@ impl
 
         // Copy the data from GPU 0 back to the CPU
         let mut output = vec![0u64; data_per_gpu];
-        let stream = self.streams.first().unwrap();
+        let stream = self.streams.first().unwrap().write().unwrap();
         stream.copy_to_cpu::<u64>(&mut output, input.0.d_vecs.first().unwrap());
 
         LweCircuitBootstrapPrivateFunctionalPackingKeyswitchKeys64(

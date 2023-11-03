@@ -76,7 +76,7 @@ impl LweCiphertextVectorConversionEngine<LweCiphertextVector32, CudaLweCiphertex
             CiphertextCount(input.lwe_ciphertext_count().0),
         );
         for gpu_index in 0..number_of_gpus.0 {
-            let stream = &self.streams[gpu_index];
+            let stream = &*self.streams[gpu_index].read().unwrap();
             let samples = compute_number_of_samples_on_gpu(
                 self.get_number_of_gpus(),
                 CiphertextCount(input.lwe_ciphertext_count().0),
@@ -224,7 +224,7 @@ impl LweCiphertextVectorConversionEngine<LweCiphertextVector64, CudaLweCiphertex
             CiphertextCount(input.lwe_ciphertext_count().0),
         );
         for gpu_index in 0..number_of_gpus.0 {
-            let stream = &self.streams[gpu_index];
+            let stream = &self.streams[gpu_index].write().unwrap();
             let samples = compute_number_of_samples_on_gpu(
                 self.get_number_of_gpus(),
                 CiphertextCount(input.lwe_ciphertext_count().0),
@@ -379,7 +379,7 @@ impl LweCiphertextVectorConversionEngine<LweCiphertextVectorView32<'_>, CudaLweC
             CiphertextCount(input.lwe_ciphertext_count().0),
         );
         for gpu_index in 0..number_of_gpus.0 {
-            let stream = &self.streams[gpu_index];
+            let stream = &self.streams[gpu_index].write().unwrap();
             let samples = compute_number_of_samples_on_gpu(
                 self.get_number_of_gpus(),
                 CiphertextCount(input.lwe_ciphertext_count().0),
@@ -468,7 +468,7 @@ impl LweCiphertextVectorConversionEngine<LweCiphertextVectorView64<'_>, CudaLweC
             CiphertextCount(input.lwe_ciphertext_count().0),
         );
         for gpu_index in 0..number_of_gpus.0 {
-            let stream = &self.streams[gpu_index];
+            let stream = &self.streams[gpu_index].read().unwrap();
             let samples = compute_number_of_samples_on_gpu(
                 self.get_number_of_gpus(),
                 CiphertextCount(input.lwe_ciphertext_count().0),
@@ -557,7 +557,7 @@ impl
             CiphertextCount(input.lwe_ciphertext_count().0),
         );
         for gpu_index in 0..number_of_gpus.0 {
-            let stream = &self.streams[gpu_index];
+            let stream = &self.streams[gpu_index].read().unwrap();
             let samples = compute_number_of_samples_on_gpu(
                 self.get_number_of_gpus(),
                 CiphertextCount(input.lwe_ciphertext_count().0),
@@ -647,7 +647,7 @@ impl
             CiphertextCount(input.lwe_ciphertext_count().0),
         );
         for gpu_index in 0..number_of_gpus.0 {
-            let stream = &self.streams[gpu_index];
+            let stream = &self.streams[gpu_index].read().unwrap();
             let samples = compute_number_of_samples_on_gpu(
                 self.get_number_of_gpus(),
                 CiphertextCount(input.lwe_ciphertext_count().0),

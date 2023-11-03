@@ -30,7 +30,7 @@ impl CleartextVectorConversionEngine<CleartextVector32, CudaCleartextVector32> f
             CiphertextCount(input.cleartext_count().0),
         );
         for gpu_index in 0..number_of_gpus.0 {
-            let stream = &self.streams[gpu_index];
+            let stream = &*self.streams[gpu_index].read().unwrap();
             let samples = compute_number_of_samples_on_gpu(
                 self.get_number_of_gpus(),
                 CiphertextCount(input.cleartext_count().0),
@@ -90,7 +90,7 @@ impl CleartextVectorConversionEngine<CleartextVector64, CudaCleartextVector64> f
             CiphertextCount(input.cleartext_count().0),
         );
         for gpu_index in 0..number_of_gpus.0 {
-            let stream = &self.streams[gpu_index];
+            let stream = &*self.streams[gpu_index].write().unwrap();
             let samples = compute_number_of_samples_on_gpu(
                 self.get_number_of_gpus(),
                 CiphertextCount(input.cleartext_count().0),

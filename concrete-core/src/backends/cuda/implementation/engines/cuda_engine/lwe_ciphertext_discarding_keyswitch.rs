@@ -107,7 +107,7 @@ impl
         input: &CudaLweCiphertext32,
         ksk: &CudaLweKeyswitchKey32,
     ) {
-        let stream = &self.streams[0];
+        let stream = &self.streams[self.get_curr_stream_idx()].write().unwrap();
 
         stream.discard_keyswitch_lwe_ciphertext_vector::<u32>(
             &mut output.0.d_vec,
@@ -214,7 +214,7 @@ impl
         input: &CudaLweCiphertext64,
         ksk: &CudaLweKeyswitchKey64,
     ) {
-        let stream = &self.streams[0];
+        let stream = &self.streams[self.get_curr_stream_idx()].write().unwrap();
 
         stream.discard_keyswitch_lwe_ciphertext_vector::<u64>(
             &mut output.0.d_vec,

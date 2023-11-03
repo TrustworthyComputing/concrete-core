@@ -3,6 +3,7 @@ use crate::backends::cuda::private::device::{CudaStream, GpuIndex, NumberOfGpus}
 use crate::prelude::sealed::AbstractEngineSeal;
 use crate::prelude::{AbstractEngine, SharedMemoryAmount};
 use concrete_cuda::cuda_bind::cuda_get_number_of_gpus;
+use std::sync::{Arc, RwLock};
 
 /// A variant of CudaEngine exposed by the cuda backend.
 ///
@@ -11,7 +12,7 @@ use concrete_cuda::cuda_bind::cuda_get_number_of_gpus;
 /// input ciphertexts than the CudaEngine's bootstrap implementation.
 #[derive(Debug, Clone)]
 pub struct AmortizedCudaEngine {
-    streams: Vec<CudaStream>,
+    streams: Vec<Arc<RwLock<CudaStream>>>,
     max_shared_memory: usize,
 }
 
@@ -27,11 +28,11 @@ impl AbstractEngine for AmortizedCudaEngine {
         if number_of_gpus == 0 {
             Err(CudaError::DeviceNotFound)
         } else {
-            let mut streams: Vec<CudaStream> = Vec::new();
+            let mut streams: Vec<Arc<RwLock<CudaStream>>> = Vec::new();
             for gpu_index in 0..number_of_gpus {
-                streams.push(CudaStream::new(GpuIndex(gpu_index))?);
+                streams.push(Arc::new(RwLock::new(CudaStream::new(GpuIndex(gpu_index))?)));
             }
-            let max_shared_memory = streams[0].get_max_shared_memory()?;
+            let max_shared_memory = streams[0].read().unwrap().get_max_shared_memory()?;
 
             Ok(AmortizedCudaEngine {
                 streams,
@@ -47,7 +48,7 @@ impl AmortizedCudaEngine {
         NumberOfGpus(self.streams.len())
     }
     /// Get the Cuda streams from the engine
-    pub fn get_cuda_streams(&self) -> &Vec<CudaStream> {
+    pub fn get_cuda_streams(&self) -> &Vec<Arc<RwLock<CudaStream>>> {
         &self.streams
     }
     /// Get the size of the shared memory (on device 0)

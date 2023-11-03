@@ -106,7 +106,7 @@ impl
         input: &CudaGlweCiphertextVector64,
     ) {
         // Copy the data from GPU 0 back to the CPU
-        let stream = &self.streams[0];
+        let stream = &self.streams[0].write().unwrap();
         let output_container = output.0.tensor.as_mut_container();
         stream.copy_to_cpu::<u64>(output_container, input.0.d_vecs.first().unwrap());
     }

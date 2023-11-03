@@ -9,13 +9,14 @@ use crate::prelude::{
     DecompositionBaseLog, DecompositionLevelCount, DeltaLog, ExtractedBitsCount, GlweDimension,
     LweCiphertextCount, LweDimension, PolynomialSize, SharedMemoryAmount,
 };
+use std::sync::{Arc, RwLock};
 
 #[cfg(test)]
 mod test;
 
 #[allow(clippy::too_many_arguments)]
 pub(crate) unsafe fn execute_circuit_bootstrap_vertical_packing_on_gpu<T: UnsignedInteger>(
-    streams: &[CudaStream],
+    streams: &Vec<Arc<RwLock<CudaStream>>>,
     lwe_array_out: &mut CudaLweList<T>,
     lwe_array_in: &CudaLweList<T>,
     lut_vector: &CudaPlaintextList<T>,
@@ -25,7 +26,7 @@ pub(crate) unsafe fn execute_circuit_bootstrap_vertical_packing_on_gpu<T: Unsign
     base_log_cbs: DecompositionBaseLog,
     cuda_shared_memory: SharedMemoryAmount,
 ) {
-    let stream = &streams[0];
+    let stream = &streams[0].write().unwrap();
     let lut_number = lwe_array_out.lwe_ciphertext_count.0;
     stream.discard_circuit_bootstrap_boolean_vertical_packing_lwe_ciphertext_vector::<T>(
         lwe_array_out.d_vecs.get_mut(0).unwrap(),
@@ -50,7 +51,7 @@ pub(crate) unsafe fn execute_circuit_bootstrap_vertical_packing_on_gpu<T: Unsign
 
 #[allow(clippy::too_many_arguments)]
 pub(crate) unsafe fn execute_lwe_ciphertext_vector_extract_bits_on_gpu<T: UnsignedInteger>(
-    streams: &[CudaStream],
+    streams: &Vec<Arc<RwLock<CudaStream>>>,
     lwe_array_out: &mut CudaVec<T>,
     lwe_array_in: &CudaVec<T>,
     keyswitch_key: &CudaVec<T>,
@@ -68,7 +69,7 @@ pub(crate) unsafe fn execute_lwe_ciphertext_vector_extract_bits_on_gpu<T: Unsign
     num_samples: LweCiphertextCount,
     cuda_shared_memory: SharedMemoryAmount,
 ) {
-    let stream = &streams[0];
+    let stream = &streams[0].write().unwrap();
 
     stream.discard_extract_bits_lwe_ciphertext_vector::<T>(
         lwe_array_out,

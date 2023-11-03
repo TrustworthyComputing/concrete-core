@@ -1,9 +1,7 @@
 use super::engine_error;
 use crate::specification::engines::AbstractEngine;
 use crate::specification::entities::{
-    LweCiphertextVectorEntity,
-    LweBootstrapKeyEntity,
-    LweKeyswitchKeyEntity,
+    LweBootstrapKeyEntity, LweCiphertextVectorEntity, LweKeyswitchKeyEntity,
 };
 
 engine_error! {
@@ -11,7 +9,7 @@ engine_error! {
     LweDimensionMismatch => "The input and output LWE dimensions must be the same.",
     CiphertextCountMismatch => "The input and output ciphertext count must be the same."
 }
-    
+
 impl<EngineError: std::error::Error> LweCiphertextVectorDiscardingNorError<EngineError> {
     /// Validates the inputs
     pub fn perform_generic_checks<OutputCiphertextVector, InputCiphertextVector>(
@@ -23,20 +21,16 @@ impl<EngineError: std::error::Error> LweCiphertextVectorDiscardingNorError<Engin
         InputCiphertextVector: LweCiphertextVectorEntity,
         OutputCiphertextVector: LweCiphertextVectorEntity,
     {
-        if output.lwe_dimension() != input_1.lwe_dimension()
-        {
+        if output.lwe_dimension() != input_1.lwe_dimension() {
             return Err(Self::LweDimensionMismatch);
         }
-        if output.lwe_dimension() != input_2.lwe_dimension()
-        {
+        if output.lwe_dimension() != input_2.lwe_dimension() {
             return Err(Self::LweDimensionMismatch);
         }
-        if output.lwe_ciphertext_count() != input_1.lwe_ciphertext_count()
-        {
+        if output.lwe_ciphertext_count() != input_1.lwe_ciphertext_count() {
             return Err(Self::CiphertextCountMismatch);
         }
-        if output.lwe_ciphertext_count() != input_2.lwe_ciphertext_count()
-        {
+        if output.lwe_ciphertext_count() != input_2.lwe_ciphertext_count() {
             return Err(Self::CiphertextCountMismatch);
         }
         Ok(())

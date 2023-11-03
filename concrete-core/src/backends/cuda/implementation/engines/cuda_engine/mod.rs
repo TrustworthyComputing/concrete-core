@@ -2,6 +2,7 @@ use crate::backends::cuda::private::device::{CudaStream, GpuIndex, NumberOfGpus}
 use crate::prelude::sealed::AbstractEngineSeal;
 use crate::prelude::{AbstractEngine, CudaError, SharedMemoryAmount};
 use concrete_cuda::cuda_bind::{cuda_get_number_of_gpus, cuda_get_number_of_sms};
+use std::sync::{Arc, RwLock};
 /// The main engine exposed by the cuda backend.
 ///
 /// This engine handles single-GPU and multi-GPU computations for the user. It always associates
@@ -16,8 +17,8 @@ use concrete_cuda::cuda_bind::{cuda_get_number_of_gpus, cuda_get_number_of_sms};
 
 #[derive(Debug, Clone)]
 pub struct CudaEngine {
-    streams: Vec<CudaStream>,
-    stream_idx: usize,
+    streams: Vec<Arc<RwLock<CudaStream>>>,
+    stream_idx: Arc<RwLock<usize>>,
     max_shared_memory: usize,
     number_of_gpus: usize,
 }
@@ -35,17 +36,17 @@ impl AbstractEngine for CudaEngine {
             Err(CudaError::DeviceNotFound)
         } else {
             let number_of_sms = unsafe { cuda_get_number_of_sms(0) as usize };
-            let mut streams: Vec<CudaStream> = Vec::new();
-            for gpu_index in 0..(number_of_gpus*number_of_sms) {
-                let curr_gpu : usize = gpu_index / number_of_sms;
-                streams.push(CudaStream::new(GpuIndex(curr_gpu))?);
+            let mut streams: Vec<Arc<RwLock<CudaStream>>> = Vec::new();
+            for gpu_index in 0..(number_of_gpus * number_of_sms) {
+                let curr_gpu: usize = gpu_index / number_of_sms;
+                streams.push(Arc::new(RwLock::new(CudaStream::new(GpuIndex(curr_gpu))?)));
             }
-            let max_shared_memory = streams[0].get_max_shared_memory()?;
+            let max_shared_memory = streams[0].read().unwrap().get_max_shared_memory()?;
             let stream_idx = 0;
 
             Ok(CudaEngine {
                 streams,
-                stream_idx: stream_idx as usize,
+                stream_idx: Arc::new(RwLock::new(stream_idx)),
                 max_shared_memory: max_shared_memory as usize,
                 number_of_gpus: number_of_gpus as usize,
             })
@@ -59,17 +60,19 @@ impl CudaEngine {
         NumberOfGpus(self.number_of_gpus)
     }
     /// Get the Cuda streams from the engine
-    pub fn get_cuda_streams(&self) -> &Vec<CudaStream> {
+    pub fn get_cuda_streams(&self) -> &Vec<Arc<RwLock<CudaStream>>> {
         &self.streams
     }
     /// Get the current stream index from the engine
     pub fn get_curr_stream_idx(&self) -> usize {
-        self.stream_idx
+        *self.stream_idx.read().unwrap()
     }
-    /// Increment current stream index 
-    pub fn inc_stream_idx(&mut self) {
-        self.stream_idx = (self.stream_idx + 1) % self.streams.len();
+    /// Increment current stream index
+    pub fn inc_stream_idx(&mut self, amt : usize) {
+        let mut stream_idx = self.stream_idx.write().unwrap();
+        *stream_idx = (*stream_idx + amt) % self.streams.len();
     }
+
     /// Get the size of the shared memory (on device 0)
     pub fn get_cuda_shared_memory(&self) -> SharedMemoryAmount {
         SharedMemoryAmount(self.max_shared_memory)
@@ -105,21 +108,21 @@ mod lwe_ciphertext_discarding_keyswitch;
 mod lwe_ciphertext_vector_cleartext_vector_discarding_multiplication;
 mod lwe_ciphertext_vector_conversion;
 mod lwe_ciphertext_vector_discarding_addition;
+mod lwe_ciphertext_vector_discarding_and;
 mod lwe_ciphertext_vector_discarding_bootstrap;
 mod lwe_ciphertext_vector_discarding_circuit_bootstrap_boolean_vertical_packing;
 mod lwe_ciphertext_vector_discarding_conversion;
 mod lwe_ciphertext_vector_discarding_keyswitch;
+mod lwe_ciphertext_vector_discarding_nand;
+mod lwe_ciphertext_vector_discarding_nor;
+mod lwe_ciphertext_vector_discarding_not;
 mod lwe_ciphertext_vector_discarding_opposite;
+mod lwe_ciphertext_vector_discarding_or;
+mod lwe_ciphertext_vector_discarding_xnor;
+mod lwe_ciphertext_vector_discarding_xor;
 mod lwe_ciphertext_vector_glwe_ciphertext_discarding_private_functional_packing_keyswitch;
 mod lwe_ciphertext_vector_plaintext_vector_discarding_addition;
 mod lwe_circuit_bootstrap_private_functional_packing_keyswitch_keys_conversion;
 mod lwe_keyswitch_key_conversion;
 mod lwe_private_functional_packing_keyswitch_key_conversion;
 mod plaintext_vector_conversion;
-mod lwe_ciphertext_vector_discarding_not;
-mod lwe_ciphertext_vector_discarding_and;
-mod lwe_ciphertext_vector_discarding_nand;
-mod lwe_ciphertext_vector_discarding_or;
-mod lwe_ciphertext_vector_discarding_nor;
-mod lwe_ciphertext_vector_discarding_xor;
-mod lwe_ciphertext_vector_discarding_xnor;

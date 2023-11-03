@@ -14,6 +14,7 @@ use crate::prelude::{
     LweCiphertextIndex, LweDimension, PolynomialSize,
 };
 use std::marker::PhantomData;
+use std::sync::{Arc, RwLock};
 
 #[cfg(test)]
 mod test;
@@ -40,7 +41,7 @@ unsafe impl<T> Send for CudaBootstrapKey<T> where T: Send + UnsignedInteger {}
 unsafe impl<T> Sync for CudaBootstrapKey<T> where T: Sync + UnsignedInteger {}
 
 pub(crate) unsafe fn convert_lwe_bootstrap_key_from_cpu_to_gpu<T: UnsignedInteger, Cont>(
-    streams: &[CudaStream],
+    streams: &Vec<Arc<RwLock<CudaStream>>>,
     input: &StandardBootstrapKey<Cont>,
     number_of_gpus: NumberOfGpus,
 ) -> Vec<CudaVec<f64>>
@@ -58,7 +59,8 @@ where
     let total_polynomials =
         input.key_size().0 * input.glwe_size().0 * input.glwe_size().0 * input.level_count().0;
     let alloc_size = total_polynomials * input.polynomial_size().0;
-    for stream in streams.iter() {
+    for i in 0..number_of_gpus.0 {
+        let stream = &*streams[i].write().unwrap();
         let input_slice = input.as_tensor().as_slice();
         let mut d_vec = stream.malloc::<f64>(alloc_size as u32);
         stream.convert_lwe_bootstrap_key::<T>(
@@ -77,7 +79,7 @@ where
 pub(crate) unsafe fn execute_lwe_ciphertext_vector_low_latency_bootstrap_on_gpu<
     T: UnsignedInteger + commons::numeric::CastFrom<usize>,
 >(
-    streams: &[CudaStream],
+    streams: &Vec<Arc<RwLock<CudaStream>>>,
     output: &mut CudaLweList<T>,
     input: &CudaLweList<T>,
     acc: &CudaGlweList<T>,
@@ -107,10 +109,11 @@ pub(crate) unsafe fn execute_lwe_ciphertext_vector_low_latency_bootstrap_on_gpu<
         for (i, ind) in test_vector_indexes.iter_mut().enumerate() {
             *ind = <usize as CastInto<T>>::cast_into(i);
         }
-        let mut d_test_vector_indexes = stream.malloc_async::<T>(samples.0 as u32);
-        stream.copy_to_gpu_async::<T>(&mut d_test_vector_indexes, &test_vector_indexes);
+        let stream_unlocked = &*stream.write().unwrap();
+        let mut d_test_vector_indexes = stream_unlocked.malloc_async::<T>(samples.0 as u32);
+        stream_unlocked.copy_to_gpu_async::<T>(&mut d_test_vector_indexes, &test_vector_indexes);
 
-        stream.discard_bootstrap_low_latency_lwe_ciphertext_vector::<T>(
+        stream_unlocked.discard_bootstrap_low_latency_lwe_ciphertext_vector::<T>(
             output.d_vecs.get_mut(gpu_index).unwrap(),
             acc.d_vecs.get(gpu_index).unwrap(),
             &d_test_vector_indexes,
@@ -131,7 +134,7 @@ pub(crate) unsafe fn execute_lwe_ciphertext_vector_low_latency_bootstrap_on_gpu<
 pub(crate) unsafe fn execute_lwe_ciphertext_vector_amortized_bootstrap_on_gpu<
     T: UnsignedInteger + commons::numeric::CastFrom<usize>,
 >(
-    streams: &[CudaStream],
+    streams: &Vec<Arc<RwLock<CudaStream>>>,
     output: &mut CudaLweList<T>,
     input: &CudaLweList<T>,
     acc: &CudaGlweList<T>,
@@ -153,14 +156,15 @@ pub(crate) unsafe fn execute_lwe_ciphertext_vector_amortized_bootstrap_on_gpu<
     for stream in streams.iter() {
         // FIXME this is hard set at the moment because concrete-core does not support a more
         //   general API for the bootstrap
+        let stream_unlocked = &*stream.write().unwrap();
         let mut test_vector_indexes: Vec<T> = Vec::with_capacity(input.lwe_ciphertext_count.0);
         for (i, ind) in test_vector_indexes.iter_mut().enumerate() {
             *ind = <usize as CastInto<T>>::cast_into(i);
         }
         let mut d_test_vector_indexes =
-            stream.malloc_async::<T>(input.lwe_ciphertext_count.0 as u32);
-        stream.copy_to_gpu_async::<T>(&mut d_test_vector_indexes, &test_vector_indexes);
-        stream.synchronize_stream();
+            stream_unlocked.malloc_async::<T>(input.lwe_ciphertext_count.0 as u32);
+        stream_unlocked.copy_to_gpu_async::<T>(&mut d_test_vector_indexes, &test_vector_indexes);
+        stream_unlocked.synchronize_stream();
         d_test_vector_indexes_vec.push(d_test_vector_indexes);
     }
 
@@ -170,8 +174,8 @@ pub(crate) unsafe fn execute_lwe_ciphertext_vector_amortized_bootstrap_on_gpu<
             CiphertextCount(input.lwe_ciphertext_count.0),
             GpuIndex(gpu_index),
         );
-
-        stream.discard_bootstrap_amortized_lwe_ciphertext_vector::<T>(
+        let stream_unlocked = &*stream.write().unwrap();
+        stream_unlocked.discard_bootstrap_amortized_lwe_ciphertext_vector::<T>(
             output.d_vecs.get_mut(gpu_index).unwrap(),
             acc.d_vecs.get(gpu_index).unwrap(),
             d_test_vector_indexes_vec.get(gpu_index).unwrap(),

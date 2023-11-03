@@ -77,7 +77,7 @@ impl LweBootstrapKeyConversionEngine<LweBootstrapKey32, CudaFourierLweBootstrapK
             * input.polynomial_size().0;
         let size = data_per_gpu as u64 * std::mem::size_of::<u32>() as u64;
         for stream in self.streams.iter() {
-            stream.check_device_memory(size)?;
+            stream.read().unwrap().check_device_memory(size)?;
         }
         Ok(unsafe { self.convert_lwe_bootstrap_key_unchecked(input) })
     }
@@ -161,7 +161,7 @@ impl LweBootstrapKeyConversionEngine<LweBootstrapKey64, CudaFourierLweBootstrapK
             * input.polynomial_size().0;
         let size = data_per_gpu as u64 * std::mem::size_of::<u64>() as u64;
         for stream in self.streams.iter() {
-            stream.check_device_memory(size)?;
+            stream.read().unwrap().check_device_memory(size)?;
         }
         Ok(unsafe { self.convert_lwe_bootstrap_key_unchecked(input) })
     }

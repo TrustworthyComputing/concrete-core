@@ -5,6 +5,7 @@ use crate::commons::crypto::encoding::CleartextList;
 use crate::commons::math::tensor::{AsMutSlice, AsMutTensor, AsRefSlice, AsRefTensor};
 use crate::commons::numeric::UnsignedInteger;
 use crate::prelude::{CiphertextCount, CleartextCount};
+use std::sync::{Arc, RwLock};
 
 #[derive(Debug)]
 pub(crate) struct CudaCleartextList<T: UnsignedInteger> {
@@ -15,7 +16,7 @@ pub(crate) struct CudaCleartextList<T: UnsignedInteger> {
 }
 
 pub(crate) unsafe fn copy_cleartext_vector_from_cpu_to_gpu<T: UnsignedInteger, Cont>(
-    streams: &[CudaStream],
+    streams: &Vec<Arc<RwLock<CudaStream>>>,
     input: &CleartextList<Cont>,
     number_of_available_gpus: NumberOfGpus,
 ) -> Vec<CudaVec<T>>
@@ -29,7 +30,7 @@ where
     let mut vecs = Vec::with_capacity(number_of_gpus.0);
     let samples_on_gpu_0 = compute_number_of_samples_on_gpu(number_of_gpus, count, GpuIndex(0)).0;
     for (gpu_index, chunk) in input_slice.chunks_exact(samples_on_gpu_0).enumerate() {
-        let stream = &streams[gpu_index];
+        let stream = &*streams[gpu_index].write().unwrap();
         if gpu_index == number_of_gpus.0 - 1 {
             let chunk_and_remainder = [
                 chunk,
@@ -51,7 +52,7 @@ where
 }
 
 pub(crate) unsafe fn copy_cleartext_vector_from_gpu_to_cpu<T: UnsignedInteger>(
-    streams: &[CudaStream],
+    streams: &Vec<Arc<RwLock<CudaStream>>>,
     input: &CudaCleartextList<T>,
     number_of_available_gpus: NumberOfGpus,
 ) -> Vec<T> {
@@ -64,12 +65,12 @@ pub(crate) unsafe fn copy_cleartext_vector_from_gpu_to_cpu<T: UnsignedInteger>(
 
     let mut output = vec![T::ZERO; input.cleartext_count.0];
     for (gpu_index, chunks) in output.chunks_exact_mut(data_per_gpu).enumerate() {
-        let stream = &streams[gpu_index];
+        let stream = &streams[gpu_index].write().unwrap();
         stream.copy_to_cpu::<T>(chunks, input.d_vecs.get(gpu_index).unwrap());
     }
     if data_per_gpu * number_of_available_gpus.0 < input.cleartext_count.0 {
         let last_chunk = output.chunks_exact_mut(data_per_gpu).into_remainder();
-        let last_stream = streams.last().unwrap();
+        let last_stream = streams.last().unwrap().write().unwrap();
         last_stream.copy_to_cpu::<T>(last_chunk, input.d_vecs.last().unwrap());
     }
     output

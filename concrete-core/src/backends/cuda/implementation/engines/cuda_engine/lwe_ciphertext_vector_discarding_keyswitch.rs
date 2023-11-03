@@ -118,7 +118,9 @@ impl
         ksk: &CudaLweKeyswitchKey32,
     ) {
         execute_lwe_ciphertext_vector_keyswitch_on_gpu::<u32>(
-            self.get_cuda_streams(),
+            &*self.get_cuda_streams()[self.get_curr_stream_idx()]
+                .write()
+                .unwrap(),
             &mut output.0,
             &input.0,
             &ksk.0,
@@ -230,7 +232,9 @@ impl
         ksk: &CudaLweKeyswitchKey64,
     ) {
         execute_lwe_ciphertext_vector_keyswitch_on_gpu::<u64>(
-            self.get_cuda_streams(),
+            &*self.get_cuda_streams()[self.get_curr_stream_idx()]
+                .write()
+                .unwrap(),
             &mut output.0,
             &input.0,
             &ksk.0,

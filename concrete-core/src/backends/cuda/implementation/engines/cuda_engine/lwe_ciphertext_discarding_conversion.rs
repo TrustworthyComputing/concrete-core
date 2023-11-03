@@ -68,7 +68,7 @@ impl LweCiphertextDiscardingConversionEngine<CudaLweCiphertext32, LweCiphertextM
         output: &mut LweCiphertextMutView32,
         input: &CudaLweCiphertext32,
     ) {
-        let stream = &self.streams[0];
+        let stream = &self.streams[0].write().unwrap();
         stream.copy_to_cpu::<u32>(output.0.tensor.as_mut_slice(), &input.0.d_vec);
     }
 }
@@ -133,7 +133,7 @@ impl LweCiphertextDiscardingConversionEngine<CudaLweCiphertext32, LweCiphertext3
         output: &mut LweCiphertext32,
         input: &CudaLweCiphertext32,
     ) {
-        let stream = &self.streams[0];
+        let stream = &self.streams[0].write().unwrap();
         stream.copy_to_cpu::<u32>(output.0.tensor.as_mut_slice(), &input.0.d_vec);
     }
 }
@@ -200,7 +200,7 @@ impl LweCiphertextDiscardingConversionEngine<LweCiphertext32, CudaLweCiphertext3
         output: &mut CudaLweCiphertext32,
         input: &LweCiphertext32,
     ) {
-        let stream = &self.streams[0];
+        let stream = &self.streams[0].write().unwrap();
         stream.copy_to_gpu::<u32>(&mut output.0.d_vec, input.0.tensor.as_slice());
     }
 }
@@ -268,7 +268,7 @@ impl LweCiphertextDiscardingConversionEngine<CudaLweCiphertext64, LweCiphertextM
         output: &mut LweCiphertextMutView64,
         input: &CudaLweCiphertext64,
     ) {
-        let stream = &self.streams[0];
+        let stream = &self.streams[0].write().unwrap();
         stream.copy_to_cpu::<u64>(output.0.tensor.as_mut_slice(), &input.0.d_vec);
     }
 }

@@ -2,7 +2,8 @@ use crate::commons::numeric::Numeric;
 use concrete_cuda::cuda_bind::cuda_drop;
 use std::ffi::c_void;
 use std::marker::PhantomData;
-
+use std::sync::{Arc, RwLock};
+use crate::backends::cuda::private::pointers::CPointer;
 /// A contiguous array type stored in the gpu memory.
 ///
 /// Note:
@@ -17,8 +18,8 @@ use std::marker::PhantomData;
 /// memory, it is pretty close to a `Vec`. That being said, it only present a very very limited api.
 #[derive(Debug)]
 pub struct CudaVec<T: Numeric> {
-    pub(super) ptr: *mut c_void,
-    pub(super) stream: *mut c_void,
+    pub(super) ptr: Arc<RwLock<CPointer>>,
+    pub(super) stream: Arc<RwLock<CPointer>>,
     pub(super) idx: u32,
     pub(super) len: usize,
     pub(super) _phantom: PhantomData<T>,
@@ -26,17 +27,17 @@ pub struct CudaVec<T: Numeric> {
 
 impl<T: Numeric> CudaVec<T> {
     /// Returns a raw pointer to the vector’s buffer.
-    pub fn as_c_ptr(&self) -> *const c_void {
-        self.ptr as *const c_void
+    pub unsafe fn as_c_ptr(&self) -> *const c_void {
+        &mut *self.ptr.write().unwrap().0 as *const c_void
     }
 
     /// Returns an unsafe mutable pointer to the vector’s buffer.
-    pub fn as_mut_c_ptr(&mut self) -> *mut c_void {
-        self.ptr
+    pub unsafe fn as_mut_c_ptr(&mut self) -> *mut c_void {
+        &mut *self.ptr.write().unwrap().0
     }
 
-    pub fn stream_handle(&mut self) -> *mut c_void {
-        self.stream
+    pub unsafe fn stream_handle(&mut self) -> *mut c_void {
+        &mut *self.stream.write().unwrap().0
     }
 
     /// Returns the number of elements in the vector, also referred to as its ‘length’.
@@ -52,6 +53,6 @@ impl<T: Numeric> CudaVec<T> {
 
 impl<T: Numeric> Drop for CudaVec<T> {
     fn drop(&mut self) {
-        unsafe { cuda_drop(self.ptr, self.idx) };
+        unsafe { cuda_drop(&mut *self.ptr.write().unwrap().0, self.idx) };
     }
 }

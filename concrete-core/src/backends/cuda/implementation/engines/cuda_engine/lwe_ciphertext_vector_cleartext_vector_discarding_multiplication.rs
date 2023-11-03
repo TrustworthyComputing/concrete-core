@@ -44,8 +44,10 @@ impl
         input_1: &CudaLweCiphertextVector32,
         input_2: &CudaCleartextVector32,
     ) {
+        let stream_idx = self.get_curr_stream_idx();
+        let stream = &*self.get_cuda_streams()[stream_idx].read().unwrap();
         execute_lwe_ciphertext_vector_cleartext_vector_multiplication_on_gpu::<u32>(
-            self.get_cuda_streams(),
+            stream,
             &mut output.0,
             &input_1.0,
             &input_2.0,
@@ -90,8 +92,10 @@ impl
         input_1: &CudaLweCiphertextVector64,
         input_2: &CudaCleartextVector64,
     ) {
+        let stream_idx = self.get_curr_stream_idx();
+        let stream = &*self.get_cuda_streams()[stream_idx].read().unwrap();
         execute_lwe_ciphertext_vector_cleartext_vector_multiplication_on_gpu::<u64>(
-            self.get_cuda_streams(),
+            stream,
             &mut output.0,
             &input_1.0,
             &input_2.0,

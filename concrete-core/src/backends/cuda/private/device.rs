@@ -1,5 +1,5 @@
 use crate::backends::cuda::engines::CudaError;
-use crate::backends::cuda::private::pointers::StreamPointer;
+use crate::backends::cuda::private::pointers::{CPointer, StreamPointer};
 use crate::backends::cuda::private::vec::CudaVec;
 use crate::commons::numeric::{Numeric, UnsignedInteger};
 use crate::prelude::{
@@ -10,6 +10,7 @@ use crate::prelude::{
 use concrete_cuda::cuda_bind::*;
 use std::ffi::c_void;
 use std::marker::PhantomData;
+use std::sync::{Arc, RwLock};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct GpuIndex(pub usize);
@@ -20,10 +21,10 @@ pub struct NumberOfSamples(pub usize);
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct NumberOfGpus(pub usize);
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug)]
 pub struct CudaStream {
     gpu_index: GpuIndex,
-    stream: StreamPointer,
+    stream: Arc<RwLock<StreamPointer>>,
 }
 
 impl CudaStream {
@@ -32,7 +33,7 @@ impl CudaStream {
         if gpu_index.0 >= unsafe { cuda_get_number_of_gpus() } as usize {
             Err(CudaError::InvalidDeviceIndex(gpu_index))
         } else {
-            let stream = StreamPointer(unsafe { cuda_create_stream(gpu_index.0 as u32) });
+            let stream = Arc::new(RwLock::new(StreamPointer(unsafe { cuda_create_stream(gpu_index.0 as u32) })));
             Ok(CudaStream { gpu_index, stream })
         }
     }
@@ -44,7 +45,7 @@ impl CudaStream {
 
     /// Gets the stream handle
     pub(crate) fn stream_handle(&self) -> StreamPointer {
-        self.stream
+        *self.stream.write().unwrap()
     }
 
     /// Check that the GPU has enough global memory
@@ -67,8 +68,8 @@ impl CudaStream {
         let ptr = unsafe { cuda_malloc(size, self.gpu_index().0 as u32) };
         self.synchronize_device();
         CudaVec {
-            ptr,
-            stream: self.stream.0,
+            ptr: Arc::new(RwLock::new(CPointer(ptr))),
+            stream: Arc::new(RwLock::new(CPointer(self.stream_handle().0))),
             idx: self.gpu_index.0 as u32,
             len: elements as usize,
             _phantom: PhantomData::default(),
@@ -81,11 +82,11 @@ impl CudaStream {
         T: Numeric,
     {
         let size = elements as u64 * std::mem::size_of::<T>() as u64;
-        let ptr = unsafe { cuda_malloc_async(size, self.stream.0, self.gpu_index().0 as u32) };
+        let ptr = unsafe { cuda_malloc_async(size, self.stream_handle().0, self.gpu_index().0 as u32) };
         self.synchronize_stream();
         CudaVec {
-            ptr,
-            stream: self.stream.0,
+            ptr: Arc::new(RwLock::new(CPointer(ptr))),
+            stream: Arc::new(RwLock::new(CPointer(self.stream_handle().0))),
             idx: self.gpu_index.0 as u32,
             len: elements as usize,
             _phantom: PhantomData::default(),
@@ -168,7 +169,7 @@ impl CudaStream {
 
     /// Synchronizes the stream
     pub(crate) fn synchronize_stream(&self) {
-        unsafe { cuda_synchronize_stream(self.stream.0) };
+        unsafe { cuda_synchronize_stream(self.stream_handle().0) };
     }
 
     /// Synchronizes the device
@@ -201,7 +202,7 @@ impl CudaStream {
             cuda_convert_lwe_bootstrap_key_32(
                 dest.as_mut_c_ptr(),
                 src.as_ptr() as *mut c_void,
-                self.stream.0,
+                self.stream_handle().0,
                 self.gpu_index.0 as u32,
                 input_lwe_dim.0 as u32,
                 glwe_dim.0 as u32,
@@ -212,7 +213,7 @@ impl CudaStream {
             cuda_convert_lwe_bootstrap_key_64(
                 dest.as_mut_c_ptr(),
                 src.as_ptr() as *mut c_void,
-                self.stream.0,
+                self.stream_handle().0,
                 self.gpu_index.0 as u32,
                 input_lwe_dim.0 as u32,
                 glwe_dim.0 as u32,
@@ -220,7 +221,7 @@ impl CudaStream {
                 polynomial_size.0 as u32,
             );
         }
-        cuda_synchronize_stream(self.stream.0);
+        cuda_synchronize_stream(self.stream_handle().0);
     }
 
     /// Discarding Boolean NOT on a vector of LWE ciphertexts
@@ -234,7 +235,7 @@ impl CudaStream {
     ) {
         if T::BITS == 32 {
             cuda_boolean_not_32(
-                self.stream.0,
+                self.stream_handle().0,
                 self.gpu_index.0 as u32,
                 lwe_array_out.as_mut_c_ptr(),
                 lwe_array_in.as_c_ptr(),
@@ -244,7 +245,7 @@ impl CudaStream {
         } else if T::BITS == 64 {
             panic!("Boolean gates with 64-bit ctxts are not supported!");
         }
-        cuda_synchronize_stream(self.stream.0);
+        cuda_synchronize_stream(self.stream_handle().0);
     }
 
     /// Discarding Boolean AND between two vectors of LWE ciphertexts
@@ -268,7 +269,7 @@ impl CudaStream {
     ) {
         if T::BITS == 32 {
             cuda_boolean_and_32(
-                self.stream.0,
+                self.stream_handle().0,
                 self.gpu_index.0 as u32,
                 lwe_array_out.as_mut_c_ptr(),
                 lwe_array_in_1.as_c_ptr(),
@@ -288,7 +289,7 @@ impl CudaStream {
         } else if T::BITS == 64 {
             panic!("Boolean gates with 64-bit ctxts are not supported!");
         }
-        cuda_synchronize_stream(self.stream.0);
+        cuda_synchronize_stream(self.stream_handle().0);
     }
 
     /// Discarding Boolean NAND between two vectors of LWE ciphertexts
@@ -312,7 +313,7 @@ impl CudaStream {
     ) {
         if T::BITS == 32 {
             cuda_boolean_nand_32(
-                self.stream.0,
+                self.stream_handle().0,
                 self.gpu_index.0 as u32,
                 lwe_array_out.as_mut_c_ptr(),
                 lwe_array_in_1.as_c_ptr(),
@@ -332,7 +333,7 @@ impl CudaStream {
         } else if T::BITS == 64 {
             panic!("Boolean gates with 64-bit ctxts are not supported!");
         }
-        cuda_synchronize_stream(self.stream.0);
+        cuda_synchronize_stream(self.stream_handle().0);
     }
 
     /// Discarding Boolean OR between two vectors of LWE ciphertexts
@@ -356,7 +357,7 @@ impl CudaStream {
     ) {
         if T::BITS == 32 {
             cuda_boolean_or_32(
-                self.stream.0,
+                self.stream_handle().0,
                 self.gpu_index.0 as u32,
                 lwe_array_out.as_mut_c_ptr(),
                 lwe_array_in_1.as_c_ptr(),
@@ -376,7 +377,7 @@ impl CudaStream {
         } else if T::BITS == 64 {
             panic!("Boolean gates with 64-bit ctxts are not supported!");
         }
-        cuda_synchronize_stream(self.stream.0);
+        cuda_synchronize_stream(self.stream_handle().0);
     }
 
     /// Discarding Boolean NOR between two vectors of LWE ciphertexts
@@ -400,7 +401,7 @@ impl CudaStream {
     ) {
         if T::BITS == 32 {
             cuda_boolean_nor_32(
-                self.stream.0,
+                self.stream_handle().0,
                 self.gpu_index.0 as u32,
                 lwe_array_out.as_mut_c_ptr(),
                 lwe_array_in_1.as_c_ptr(),
@@ -420,7 +421,7 @@ impl CudaStream {
         } else if T::BITS == 64 {
             panic!("Boolean gates with 64-bit ctxts are not supported!");
         }
-        cuda_synchronize_stream(self.stream.0);
+        cuda_synchronize_stream(self.stream_handle().0);
     }
 
     /// Discarding Boolean XOR between two vectors of LWE ciphertexts
@@ -444,7 +445,7 @@ impl CudaStream {
     ) {
         if T::BITS == 32 {
             cuda_boolean_xor_32(
-                self.stream.0,
+                self.stream_handle().0,
                 self.gpu_index.0 as u32,
                 lwe_array_out.as_mut_c_ptr(),
                 lwe_array_in_1.as_c_ptr(),
@@ -464,7 +465,7 @@ impl CudaStream {
         } else if T::BITS == 64 {
             panic!("Boolean gates with 64-bit ctxts are not supported!");
         }
-        cuda_synchronize_stream(self.stream.0);
+        cuda_synchronize_stream(self.stream_handle().0);
     }
 
     /// Discarding Boolean XNOR between two vectors of LWE ciphertexts
@@ -488,7 +489,7 @@ impl CudaStream {
     ) {
         if T::BITS == 32 {
             cuda_boolean_xnor_32(
-                self.stream.0,
+                self.stream_handle().0,
                 self.gpu_index.0 as u32,
                 lwe_array_out.as_mut_c_ptr(),
                 lwe_array_in_1.as_c_ptr(),
@@ -508,7 +509,7 @@ impl CudaStream {
         } else if T::BITS == 64 {
             panic!("Boolean gates with 64-bit ctxts are not supported!");
         }
-        cuda_synchronize_stream(self.stream.0);
+        cuda_synchronize_stream(self.stream_handle().0);
     }
 
     /// Discarding bootstrap on a vector of LWE ciphertexts
@@ -532,7 +533,7 @@ impl CudaStream {
         if T::BITS == 32 {
             let mut pbs_buffer: *mut i8 = std::ptr::null_mut();
             scratch_cuda_bootstrap_amortized_32(
-                self.stream.0,
+                self.stream_handle().0,
                 self.gpu_index.0 as u32,
                 &mut pbs_buffer as *mut *mut i8,
                 glwe_dimension.0 as u32,
@@ -542,7 +543,7 @@ impl CudaStream {
                 true,
             );
             cuda_bootstrap_amortized_lwe_ciphertext_vector_32(
-                self.stream.0,
+                self.stream_handle().0,
                 self.gpu_index.0 as u32,
                 lwe_array_out.as_mut_c_ptr(),
                 test_vector.as_c_ptr(),
@@ -561,14 +562,14 @@ impl CudaStream {
                 max_shared_memory.0 as u32,
             );
             cleanup_cuda_bootstrap_amortized(
-                self.stream.0,
+                self.stream_handle().0,
                 self.gpu_index.0 as u32,
                 &mut pbs_buffer as *mut *mut i8,
             );
         } else if T::BITS == 64 {
             let mut pbs_buffer: *mut i8 = std::ptr::null_mut();
             scratch_cuda_bootstrap_amortized_64(
-                self.stream.0,
+                self.stream_handle().0,
                 self.gpu_index.0 as u32,
                 &mut pbs_buffer as *mut *mut i8,
                 glwe_dimension.0 as u32,
@@ -578,7 +579,7 @@ impl CudaStream {
                 true,
             );
             cuda_bootstrap_amortized_lwe_ciphertext_vector_64(
-                self.stream.0,
+                self.stream_handle().0,
                 self.gpu_index.0 as u32,
                 lwe_array_out.as_mut_c_ptr(),
                 test_vector.as_c_ptr(),
@@ -597,12 +598,12 @@ impl CudaStream {
                 max_shared_memory.0 as u32,
             );
             cleanup_cuda_bootstrap_amortized(
-                self.stream.0,
+                self.stream_handle().0,
                 self.gpu_index.0 as u32,
                 &mut pbs_buffer as *mut *mut i8,
             );
         }
-        cuda_synchronize_stream(self.stream.0);
+        cuda_synchronize_stream(self.stream_handle().0);
     }
 
     /// Discarding bootstrap on a vector of LWE ciphertexts
@@ -626,7 +627,7 @@ impl CudaStream {
         if T::BITS == 32 {
             let mut pbs_buffer: *mut i8 = std::ptr::null_mut();
             scratch_cuda_bootstrap_low_latency_32(
-                self.stream.0,
+                self.stream_handle().0,
                 self.gpu_index.0 as u32,
                 &mut pbs_buffer as *mut *mut i8,
                 glwe_dimension.0 as u32,
@@ -637,7 +638,7 @@ impl CudaStream {
                 true,
             );
             cuda_bootstrap_low_latency_lwe_ciphertext_vector_32(
-                self.stream.0,
+                self.stream_handle().0,
                 self.gpu_index.0 as u32,
                 lwe_array_out.as_mut_c_ptr(),
                 test_vector.as_c_ptr(),
@@ -656,14 +657,14 @@ impl CudaStream {
                 max_shared_memory.0 as u32,
             );
             cleanup_cuda_bootstrap_low_latency(
-                self.stream.0,
+                self.stream_handle().0,
                 self.gpu_index.0 as u32,
                 &mut pbs_buffer as *mut *mut i8,
             );
         } else if T::BITS == 64 {
             let mut pbs_buffer: *mut i8 = std::ptr::null_mut();
             scratch_cuda_bootstrap_low_latency_64(
-                self.stream.0,
+                self.stream_handle().0,
                 self.gpu_index.0 as u32,
                 &mut pbs_buffer as *mut *mut i8,
                 glwe_dimension.0 as u32,
@@ -674,7 +675,7 @@ impl CudaStream {
                 true,
             );
             cuda_bootstrap_low_latency_lwe_ciphertext_vector_64(
-                self.stream.0,
+                self.stream_handle().0,
                 self.gpu_index.0 as u32,
                 lwe_array_out.as_mut_c_ptr(),
                 test_vector.as_c_ptr(),
@@ -693,12 +694,12 @@ impl CudaStream {
                 max_shared_memory.0 as u32,
             );
             cleanup_cuda_bootstrap_low_latency(
-                self.stream.0,
+                self.stream_handle().0,
                 self.gpu_index.0 as u32,
                 &mut pbs_buffer as *mut *mut i8,
             );
         }
-        cuda_synchronize_stream(self.stream.0);
+        cuda_synchronize_stream(self.stream_handle().0);
     }
 
     /// Discarding keyswitch on a vector of LWE ciphertexts
@@ -716,7 +717,7 @@ impl CudaStream {
     ) {
         if T::BITS == 32 {
             cuda_keyswitch_lwe_ciphertext_vector_32(
-                self.stream.0,
+                self.stream_handle().0,
                 self.gpu_index.0 as u32,
                 lwe_array_out.as_mut_c_ptr(),
                 lwe_array_in.as_c_ptr(),
@@ -729,7 +730,7 @@ impl CudaStream {
             );
         } else if T::BITS == 64 {
             cuda_keyswitch_lwe_ciphertext_vector_64(
-                self.stream.0,
+                self.stream_handle().0,
                 self.gpu_index.0 as u32,
                 lwe_array_out.as_mut_c_ptr(),
                 lwe_array_in.as_c_ptr(),
@@ -741,7 +742,7 @@ impl CudaStream {
                 num_samples.0 as u32,
             );
         }
-        cuda_synchronize_stream(self.stream.0);
+        cuda_synchronize_stream(self.stream_handle().0);
     }
 
     /// Discarding private functional packing keyswitch on a vector of LWE ciphertexts
@@ -761,7 +762,7 @@ impl CudaStream {
     ) {
         if T::BITS == 32 {
             cuda_fp_keyswitch_lwe_to_glwe_32(
-                self.stream.0,
+                self.stream_handle().0,
                 self.gpu_index.0 as u32,
                 glwe_array_out.as_mut_c_ptr(),
                 lwe_array_in.as_c_ptr(),
@@ -776,7 +777,7 @@ impl CudaStream {
             );
         } else if T::BITS == 64 {
             cuda_fp_keyswitch_lwe_to_glwe_64(
-                self.stream.0,
+                self.stream_handle().0,
                 self.gpu_index.0 as u32,
                 glwe_array_out.as_mut_c_ptr(),
                 lwe_array_in.as_c_ptr(),
@@ -790,7 +791,7 @@ impl CudaStream {
                 number_of_keys.0 as u32,
             );
         }
-        cuda_synchronize_stream(self.stream.0);
+        cuda_synchronize_stream(self.stream_handle().0);
     }
 
     /// Discarding opposite on a vector of LWE ciphertexts
@@ -803,7 +804,7 @@ impl CudaStream {
     ) {
         if T::BITS == 32 {
             cuda_negate_lwe_ciphertext_vector_32(
-                self.stream.0,
+                self.stream_handle().0,
                 self.gpu_index.0 as u32,
                 lwe_array_out.as_mut_c_ptr(),
                 lwe_array_in.as_c_ptr(),
@@ -812,7 +813,7 @@ impl CudaStream {
             );
         } else if T::BITS == 64 {
             cuda_negate_lwe_ciphertext_vector_64(
-                self.stream.0,
+                self.stream_handle().0,
                 self.gpu_index.0 as u32,
                 lwe_array_out.as_mut_c_ptr(),
                 lwe_array_in.as_c_ptr(),
@@ -820,7 +821,7 @@ impl CudaStream {
                 num_samples.0 as u32,
             );
         }
-        cuda_synchronize_stream(self.stream.0);
+        cuda_synchronize_stream(self.stream_handle().0);
     }
     /// Discarding addition of a vector of LWE ciphertexts
     pub unsafe fn discard_add_lwe_ciphertext_vector<T: UnsignedInteger>(
@@ -833,7 +834,7 @@ impl CudaStream {
     ) {
         if T::BITS == 32 {
             cuda_add_lwe_ciphertext_vector_32(
-                self.stream.0,
+                self.stream_handle().0,
                 self.gpu_index.0 as u32,
                 lwe_array_out.as_mut_c_ptr(),
                 lwe_array_in_1.as_c_ptr(),
@@ -843,7 +844,7 @@ impl CudaStream {
             );
         } else if T::BITS == 64 {
             cuda_add_lwe_ciphertext_vector_64(
-                self.stream.0,
+                self.stream_handle().0,
                 self.gpu_index.0 as u32,
                 lwe_array_out.as_mut_c_ptr(),
                 lwe_array_in_1.as_c_ptr(),
@@ -852,7 +853,7 @@ impl CudaStream {
                 num_samples.0 as u32,
             );
         }
-        cuda_synchronize_stream(self.stream.0);
+        cuda_synchronize_stream(self.stream_handle().0);
     }
 
     /// Discarding addition of a vector of LWE ciphertexts with a vector of plaintexts
@@ -866,7 +867,7 @@ impl CudaStream {
     ) {
         if T::BITS == 32 {
             cuda_add_lwe_ciphertext_vector_plaintext_vector_32(
-                self.stream.0,
+                self.stream_handle().0,
                 self.gpu_index.0 as u32,
                 lwe_array_out.as_mut_c_ptr(),
                 lwe_array_in.as_c_ptr(),
@@ -876,7 +877,7 @@ impl CudaStream {
             );
         } else if T::BITS == 64 {
             cuda_add_lwe_ciphertext_vector_plaintext_vector_64(
-                self.stream.0,
+                self.stream_handle().0,
                 self.gpu_index.0 as u32,
                 lwe_array_out.as_mut_c_ptr(),
                 lwe_array_in.as_c_ptr(),
@@ -885,7 +886,7 @@ impl CudaStream {
                 num_samples.0 as u32,
             );
         }
-        cuda_synchronize_stream(self.stream.0);
+        cuda_synchronize_stream(self.stream_handle().0);
     }
 
     /// Discarding multiplication of a vector of LWE ciphertexts with a vector of cleartexts
@@ -899,7 +900,7 @@ impl CudaStream {
     ) {
         if T::BITS == 32 {
             cuda_mult_lwe_ciphertext_vector_cleartext_vector_32(
-                self.stream.0,
+                self.stream_handle().0,
                 self.gpu_index.0 as u32,
                 lwe_array_out.as_mut_c_ptr(),
                 lwe_array_in.as_c_ptr(),
@@ -909,7 +910,7 @@ impl CudaStream {
             );
         } else if T::BITS == 64 {
             cuda_mult_lwe_ciphertext_vector_cleartext_vector_64(
-                self.stream.0,
+                self.stream_handle().0,
                 self.gpu_index.0 as u32,
                 lwe_array_out.as_mut_c_ptr(),
                 lwe_array_in.as_c_ptr(),
@@ -918,7 +919,7 @@ impl CudaStream {
                 num_samples.0 as u32,
             );
         }
-        cuda_synchronize_stream(self.stream.0);
+        cuda_synchronize_stream(self.stream_handle().0);
     }
 
     /// Discarding bit extraction on a vector of LWE ciphertexts
@@ -945,7 +946,7 @@ impl CudaStream {
         if T::BITS == 32 {
             let mut bit_extract_buffer: *mut i8 = std::ptr::null_mut();
             scratch_cuda_extract_bits_32(
-                self.stream.0,
+                self.stream_handle().0,
                 self.gpu_index.0 as u32,
                 &mut bit_extract_buffer as *mut *mut i8,
                 glwe_dimension.0 as u32,
@@ -957,7 +958,7 @@ impl CudaStream {
                 true,
             );
             cuda_extract_bits_32(
-                self.stream.0,
+                self.stream_handle().0,
                 self.gpu_index.0 as u32,
                 lwe_array_out.as_mut_c_ptr(),
                 lwe_array_in.as_c_ptr(),
@@ -978,14 +979,14 @@ impl CudaStream {
                 max_shared_memory.0 as u32,
             );
             cleanup_cuda_extract_bits(
-                self.stream.0,
+                self.stream_handle().0,
                 self.gpu_index.0 as u32,
                 &mut bit_extract_buffer as *mut *mut i8,
             );
         } else if T::BITS == 64 {
             let mut bit_extract_buffer: *mut i8 = std::ptr::null_mut();
             scratch_cuda_extract_bits_64(
-                self.stream.0,
+                self.stream_handle().0,
                 self.gpu_index.0 as u32,
                 &mut bit_extract_buffer as *mut *mut i8,
                 glwe_dimension.0 as u32,
@@ -997,7 +998,7 @@ impl CudaStream {
                 true,
             );
             cuda_extract_bits_64(
-                self.stream.0,
+                self.stream_handle().0,
                 self.gpu_index.0 as u32,
                 lwe_array_out.as_mut_c_ptr(),
                 lwe_array_in.as_c_ptr(),
@@ -1018,12 +1019,12 @@ impl CudaStream {
                 max_shared_memory.0 as u32,
             );
             cleanup_cuda_extract_bits(
-                self.stream.0,
+                self.stream_handle().0,
                 self.gpu_index.0 as u32,
                 &mut bit_extract_buffer as *mut *mut i8,
             );
         }
-        cuda_synchronize_stream(self.stream.0);
+        cuda_synchronize_stream(self.stream_handle().0);
     }
 
     /// Discarding circuit bootstrap on a vector of LWE ciphertexts encrypting bits
@@ -1051,7 +1052,7 @@ impl CudaStream {
         if T::BITS == 32 {
             let mut cbs_buffer: *mut i8 = std::ptr::null_mut();
             scratch_cuda_circuit_bootstrap_32(
-                self.stream.0,
+                self.stream_handle().0,
                 self.gpu_index.0 as u32,
                 &mut cbs_buffer as *mut *mut i8,
                 glwe_dimension.0 as u32,
@@ -1063,7 +1064,7 @@ impl CudaStream {
                 true,
             );
             cuda_circuit_bootstrap_32(
-                self.stream.0,
+                self.stream_handle().0,
                 self.gpu_index.0 as u32,
                 ggsw_out.as_mut_c_ptr(),
                 lwe_array_in.as_c_ptr(),
@@ -1085,14 +1086,14 @@ impl CudaStream {
                 max_shared_memory.0 as u32,
             );
             cleanup_cuda_circuit_bootstrap(
-                self.stream.0,
+                self.stream_handle().0,
                 self.gpu_index.0 as u32,
                 &mut cbs_buffer as *mut *mut i8,
             );
         } else if T::BITS == 64 {
             let mut cbs_buffer: *mut i8 = std::ptr::null_mut();
             scratch_cuda_circuit_bootstrap_64(
-                self.stream.0,
+                self.stream_handle().0,
                 self.gpu_index.0 as u32,
                 &mut cbs_buffer as *mut *mut i8,
                 glwe_dimension.0 as u32,
@@ -1104,7 +1105,7 @@ impl CudaStream {
                 true,
             );
             cuda_circuit_bootstrap_64(
-                self.stream.0,
+                self.stream_handle().0,
                 self.gpu_index.0 as u32,
                 ggsw_out.as_mut_c_ptr(),
                 lwe_array_in.as_c_ptr(),
@@ -1126,12 +1127,12 @@ impl CudaStream {
                 max_shared_memory.0 as u32,
             );
             cleanup_cuda_circuit_bootstrap(
-                self.stream.0,
+                self.stream_handle().0,
                 self.gpu_index.0 as u32,
                 &mut cbs_buffer as *mut *mut i8,
             );
         }
-        cuda_synchronize_stream(self.stream.0);
+        cuda_synchronize_stream(self.stream_handle().0);
     }
 
     /// Discarding cbs + vertical packing on a vector of LWE ciphertexts
@@ -1164,7 +1165,7 @@ impl CudaStream {
             let mut cbs_vp_buffer: *mut i8 = std::ptr::null_mut();
             let mut cbs_delta_log: u32 = 0;
             scratch_cuda_circuit_bootstrap_vertical_packing_64(
-                self.stream.0,
+                self.stream_handle().0,
                 self.gpu_index.0 as u32,
                 &mut cbs_vp_buffer as *mut *mut i8,
                 &mut cbs_delta_log as *mut u32,
@@ -1178,7 +1179,7 @@ impl CudaStream {
                 true,
             );
             cuda_circuit_bootstrap_vertical_packing_64(
-                self.stream.0,
+                self.stream_handle().0,
                 self.gpu_index.0 as u32,
                 lwe_array_out.as_mut_c_ptr(),
                 lwe_array_in.as_c_ptr(),
@@ -1201,12 +1202,12 @@ impl CudaStream {
                 max_shared_memory.0 as u32,
             );
             cleanup_cuda_circuit_bootstrap_vertical_packing(
-                self.stream.0,
+                self.stream_handle().0,
                 self.gpu_index.0 as u32,
                 &mut cbs_vp_buffer as *mut *mut i8,
             );
         }
-        cuda_synchronize_stream(self.stream.0);
+        cuda_synchronize_stream(self.stream_handle().0);
     }
 
     /// Discarding wop PBS on a vector of LWE ciphertexts
@@ -1242,7 +1243,7 @@ impl CudaStream {
             let mut delta_log: u32 = 0;
             let mut cbs_delta_log: u32 = 0;
             scratch_cuda_wop_pbs_64(
-                self.stream.0,
+                self.stream_handle().0,
                 self.gpu_index.0 as u32,
                 &mut wop_pbs_buffer as *mut *mut i8,
                 &mut delta_log as *mut u32,
@@ -1259,7 +1260,7 @@ impl CudaStream {
                 true,
             );
             cuda_wop_pbs_64(
-                self.stream.0,
+                self.stream_handle().0,
                 self.gpu_index.0 as u32,
                 lwe_array_out.as_mut_c_ptr(),
                 lwe_array_in.as_c_ptr(),
@@ -1287,12 +1288,12 @@ impl CudaStream {
                 max_shared_memory.0 as u32,
             );
             cleanup_cuda_wop_pbs(
-                self.stream.0,
+                self.stream_handle().0,
                 self.gpu_index.0 as u32,
                 &mut wop_pbs_buffer as *mut *mut i8,
             );
         }
-        cuda_synchronize_stream(self.stream.0);
+        cuda_synchronize_stream(self.stream_handle().0);
     }
 }
 
