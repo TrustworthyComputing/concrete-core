@@ -4,10 +4,12 @@ use crate::backends::cuda::private::crypto::lwe::ciphertext::CudaLweCiphertext;
 use crate::commons::crypto::lwe::LweCiphertext;
 use crate::commons::math::tensor::{AsRefSlice, AsRefTensor};
 use crate::prelude::{LweCiphertext32, LweCiphertext64, LweCiphertextView64};
-use crate::specification::engines::{LweCiphertextConversionEngine, LweCiphertextConversionError};
+use crate::specification::engines::{
+    LweCiphertextConversionGpuEngine, LweCiphertextConversionGpuError,
+};
 use crate::specification::entities::LweCiphertextEntity;
 
-impl From<CudaError> for LweCiphertextConversionError<CudaError> {
+impl From<CudaError> for LweCiphertextConversionGpuError<CudaError> {
     fn from(err: CudaError) -> Self {
         Self::Engine(err)
     }
@@ -15,7 +17,7 @@ impl From<CudaError> for LweCiphertextConversionError<CudaError> {
 
 /// # Description
 /// Convert an LWE ciphertext with 32 bits of precision from CPU to GPU 0.
-impl LweCiphertextConversionEngine<LweCiphertext32, CudaLweCiphertext32> for CudaEngine {
+impl LweCiphertextConversionGpuEngine<LweCiphertext32, CudaLweCiphertext32> for CudaEngine {
     /// # Example
     /// ```
     /// use concrete_core::prelude::{LweCiphertextCount, LweDimension, Variance, *};
@@ -45,14 +47,14 @@ impl LweCiphertextConversionEngine<LweCiphertext32, CudaLweCiphertext32> for Cud
     /// # }
     /// ```
     fn convert_lwe_ciphertext(
-        &mut self,
+        &self,
         input: &LweCiphertext32,
-    ) -> Result<CudaLweCiphertext32, LweCiphertextConversionError<CudaError>> {
+    ) -> Result<CudaLweCiphertext32, LweCiphertextConversionGpuError<CudaError>> {
         Ok(unsafe { self.convert_lwe_ciphertext_unchecked(input) })
     }
 
     unsafe fn convert_lwe_ciphertext_unchecked(
-        &mut self,
+        &self,
         input: &LweCiphertext32,
     ) -> CudaLweCiphertext32 {
         let alloc_size = input.lwe_dimension().to_lwe_size().0 as u32;
@@ -72,7 +74,7 @@ impl LweCiphertextConversionEngine<LweCiphertext32, CudaLweCiphertext32> for Cud
 
 /// # Description
 /// Convert an LWE ciphertext with 32 bits of precision from GPU 0 to CPU.
-impl LweCiphertextConversionEngine<CudaLweCiphertext32, LweCiphertext32> for CudaEngine {
+impl LweCiphertextConversionGpuEngine<CudaLweCiphertext32, LweCiphertext32> for CudaEngine {
     /// # Example
     /// ```
     /// use concrete_core::prelude::{LweCiphertextCount, LweDimension, Variance, *};
@@ -104,14 +106,14 @@ impl LweCiphertextConversionEngine<CudaLweCiphertext32, LweCiphertext32> for Cud
     /// # }
     /// ```
     fn convert_lwe_ciphertext(
-        &mut self,
+        &self,
         input: &CudaLweCiphertext32,
-    ) -> Result<LweCiphertext32, LweCiphertextConversionError<CudaError>> {
+    ) -> Result<LweCiphertext32, LweCiphertextConversionGpuError<CudaError>> {
         Ok(unsafe { self.convert_lwe_ciphertext_unchecked(input) })
     }
 
     unsafe fn convert_lwe_ciphertext_unchecked(
-        &mut self,
+        &self,
         input: &CudaLweCiphertext32,
     ) -> LweCiphertext32 {
         let mut output = vec![0_u32; input.lwe_dimension().to_lwe_size().0];
@@ -123,7 +125,7 @@ impl LweCiphertextConversionEngine<CudaLweCiphertext32, LweCiphertext32> for Cud
 
 /// # Description
 /// Convert an LWE ciphertext with 64 bits of precision from CPU to GPU 0.
-impl LweCiphertextConversionEngine<LweCiphertext64, CudaLweCiphertext64> for CudaEngine {
+impl LweCiphertextConversionGpuEngine<LweCiphertext64, CudaLweCiphertext64> for CudaEngine {
     /// # Example
     /// ```
     /// use concrete_core::prelude::{LweCiphertextCount, LweDimension, Variance, *};
@@ -153,14 +155,14 @@ impl LweCiphertextConversionEngine<LweCiphertext64, CudaLweCiphertext64> for Cud
     /// # }
     /// ```
     fn convert_lwe_ciphertext(
-        &mut self,
+        &self,
         input: &LweCiphertext64,
-    ) -> Result<CudaLweCiphertext64, LweCiphertextConversionError<CudaError>> {
+    ) -> Result<CudaLweCiphertext64, LweCiphertextConversionGpuError<CudaError>> {
         Ok(unsafe { self.convert_lwe_ciphertext_unchecked(input) })
     }
 
     unsafe fn convert_lwe_ciphertext_unchecked(
-        &mut self,
+        &self,
         input: &LweCiphertext64,
     ) -> CudaLweCiphertext64 {
         let alloc_size = input.lwe_dimension().to_lwe_size().0 as u32;
@@ -180,7 +182,7 @@ impl LweCiphertextConversionEngine<LweCiphertext64, CudaLweCiphertext64> for Cud
 
 /// # Description
 /// Convert an LWE ciphertext with 64 bits of precision from GPU 0 to CPU.
-impl LweCiphertextConversionEngine<CudaLweCiphertext64, LweCiphertext64> for CudaEngine {
+impl LweCiphertextConversionGpuEngine<CudaLweCiphertext64, LweCiphertext64> for CudaEngine {
     /// # Example
     /// ```
     /// use concrete_core::prelude::{LweCiphertextCount, LweDimension, Variance, *};
@@ -212,14 +214,14 @@ impl LweCiphertextConversionEngine<CudaLweCiphertext64, LweCiphertext64> for Cud
     /// # }
     /// ```
     fn convert_lwe_ciphertext(
-        &mut self,
+        &self,
         input: &CudaLweCiphertext64,
-    ) -> Result<LweCiphertext64, LweCiphertextConversionError<CudaError>> {
+    ) -> Result<LweCiphertext64, LweCiphertextConversionGpuError<CudaError>> {
         Ok(unsafe { self.convert_lwe_ciphertext_unchecked(input) })
     }
 
     unsafe fn convert_lwe_ciphertext_unchecked(
-        &mut self,
+        &self,
         input: &CudaLweCiphertext64,
     ) -> LweCiphertext64 {
         let mut output = vec![0_u64; input.lwe_dimension().to_lwe_size().0];
@@ -231,7 +233,7 @@ impl LweCiphertextConversionEngine<CudaLweCiphertext64, LweCiphertext64> for Cud
 
 /// # Description
 /// Convert a view of an LWE ciphertext with 64 bits of precision from CPU to GPU 0.
-impl LweCiphertextConversionEngine<LweCiphertextView64<'_>, CudaLweCiphertext64> for CudaEngine {
+impl LweCiphertextConversionGpuEngine<LweCiphertextView64<'_>, CudaLweCiphertext64> for CudaEngine {
     /// # Example
     /// ```
     /// use concrete_core::prelude::{LweCiphertextCount, LweDimension, Variance, *};
@@ -268,14 +270,14 @@ impl LweCiphertextConversionEngine<LweCiphertextView64<'_>, CudaLweCiphertext64>
     /// # }
     /// ```
     fn convert_lwe_ciphertext(
-        &mut self,
+        &self,
         input: &LweCiphertextView64,
-    ) -> Result<CudaLweCiphertext64, LweCiphertextConversionError<CudaError>> {
+    ) -> Result<CudaLweCiphertext64, LweCiphertextConversionGpuError<CudaError>> {
         Ok(unsafe { self.convert_lwe_ciphertext_unchecked(input) })
     }
 
     unsafe fn convert_lwe_ciphertext_unchecked(
-        &mut self,
+        &self,
         input: &LweCiphertextView64,
     ) -> CudaLweCiphertext64 {
         let alloc_size = input.lwe_dimension().to_lwe_size().0 as u32;

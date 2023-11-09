@@ -10,21 +10,21 @@ use crate::backends::cuda::private::{compute_number_of_samples_on_gpu, number_of
 use crate::commons::crypto::encoding::PlaintextList;
 use crate::prelude::{CiphertextCount, PlaintextVector32, PlaintextVector64};
 use crate::specification::engines::{
-    PlaintextVectorConversionEngine, PlaintextVectorConversionError,
+    PlaintextVectorConversionGpuEngine, PlaintextVectorConversionGpuError,
 };
 use crate::specification::entities::PlaintextVectorEntity;
 
-impl From<CudaError> for PlaintextVectorConversionError<CudaError> {
+impl From<CudaError> for PlaintextVectorConversionGpuError<CudaError> {
     fn from(err: CudaError) -> Self {
         Self::Engine(err)
     }
 }
 
-impl PlaintextVectorConversionEngine<PlaintextVector32, CudaPlaintextVector32> for CudaEngine {
+impl PlaintextVectorConversionGpuEngine<PlaintextVector32, CudaPlaintextVector32> for CudaEngine {
     fn convert_plaintext_vector(
-        &mut self,
+        &self,
         input: &PlaintextVector32,
-    ) -> Result<CudaPlaintextVector32, PlaintextVectorConversionError<CudaError>> {
+    ) -> Result<CudaPlaintextVector32, PlaintextVectorConversionGpuError<CudaError>> {
         let number_of_gpus = number_of_active_gpus(
             self.get_number_of_gpus(),
             CiphertextCount(input.plaintext_count().0),
@@ -44,7 +44,7 @@ impl PlaintextVectorConversionEngine<PlaintextVector32, CudaPlaintextVector32> f
     }
 
     unsafe fn convert_plaintext_vector_unchecked(
-        &mut self,
+        &self,
         input: &PlaintextVector32,
     ) -> CudaPlaintextVector32 {
         let vecs = copy_plaintext_vector_from_cpu_to_gpu::<u32, _>(
@@ -59,16 +59,16 @@ impl PlaintextVectorConversionEngine<PlaintextVector32, CudaPlaintextVector32> f
     }
 }
 
-impl PlaintextVectorConversionEngine<CudaPlaintextVector32, PlaintextVector32> for CudaEngine {
+impl PlaintextVectorConversionGpuEngine<CudaPlaintextVector32, PlaintextVector32> for CudaEngine {
     fn convert_plaintext_vector(
-        &mut self,
+        &self,
         input: &CudaPlaintextVector32,
-    ) -> Result<PlaintextVector32, PlaintextVectorConversionError<CudaError>> {
+    ) -> Result<PlaintextVector32, PlaintextVectorConversionGpuError<CudaError>> {
         Ok(unsafe { self.convert_plaintext_vector_unchecked(input) })
     }
 
     unsafe fn convert_plaintext_vector_unchecked(
-        &mut self,
+        &self,
         input: &CudaPlaintextVector32,
     ) -> PlaintextVector32 {
         let output = copy_plaintext_vector_from_gpu_to_cpu::<u32>(
@@ -80,11 +80,11 @@ impl PlaintextVectorConversionEngine<CudaPlaintextVector32, PlaintextVector32> f
     }
 }
 
-impl PlaintextVectorConversionEngine<PlaintextVector64, CudaPlaintextVector64> for CudaEngine {
+impl PlaintextVectorConversionGpuEngine<PlaintextVector64, CudaPlaintextVector64> for CudaEngine {
     fn convert_plaintext_vector(
-        &mut self,
+        &self,
         input: &PlaintextVector64,
-    ) -> Result<CudaPlaintextVector64, PlaintextVectorConversionError<CudaError>> {
+    ) -> Result<CudaPlaintextVector64, PlaintextVectorConversionGpuError<CudaError>> {
         let number_of_gpus = number_of_active_gpus(
             self.get_number_of_gpus(),
             CiphertextCount(input.plaintext_count().0),
@@ -104,7 +104,7 @@ impl PlaintextVectorConversionEngine<PlaintextVector64, CudaPlaintextVector64> f
     }
 
     unsafe fn convert_plaintext_vector_unchecked(
-        &mut self,
+        &self,
         input: &PlaintextVector64,
     ) -> CudaPlaintextVector64 {
         let vecs = copy_plaintext_vector_from_cpu_to_gpu::<u64, _>(
@@ -119,16 +119,16 @@ impl PlaintextVectorConversionEngine<PlaintextVector64, CudaPlaintextVector64> f
     }
 }
 
-impl PlaintextVectorConversionEngine<CudaPlaintextVector64, PlaintextVector64> for CudaEngine {
+impl PlaintextVectorConversionGpuEngine<CudaPlaintextVector64, PlaintextVector64> for CudaEngine {
     fn convert_plaintext_vector(
-        &mut self,
+        &self,
         input: &CudaPlaintextVector64,
-    ) -> Result<PlaintextVector64, PlaintextVectorConversionError<CudaError>> {
+    ) -> Result<PlaintextVector64, PlaintextVectorConversionGpuError<CudaError>> {
         Ok(unsafe { self.convert_plaintext_vector_unchecked(input) })
     }
 
     unsafe fn convert_plaintext_vector_unchecked(
-        &mut self,
+        &self,
         input: &CudaPlaintextVector64,
     ) -> PlaintextVector64 {
         let output = copy_plaintext_vector_from_gpu_to_cpu::<u64>(

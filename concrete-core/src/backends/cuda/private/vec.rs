@@ -1,9 +1,9 @@
+use crate::backends::cuda::private::pointers::CPointer;
 use crate::commons::numeric::Numeric;
 use concrete_cuda::cuda_bind::cuda_drop;
 use std::ffi::c_void;
 use std::marker::PhantomData;
 use std::sync::{Arc, RwLock};
-use crate::backends::cuda::private::pointers::CPointer;
 /// A contiguous array type stored in the gpu memory.
 ///
 /// Note:

@@ -1,11 +1,11 @@
 use crate::backends::cuda::engines::{CudaEngine, CudaError};
 use crate::backends::cuda::implementation::entities::CudaGlweCiphertext64;
-use crate::prelude::{GlweCiphertextDiscardingConversionError, GlweCiphertextMutView64};
-use crate::specification::engines::GlweCiphertextDiscardingConversionEngine;
+use crate::prelude::{GlweCiphertextDiscardingConversionGpuError, GlweCiphertextMutView64};
+use crate::specification::engines::GlweCiphertextDiscardingConversionGpuEngine;
 
 /// # Description
 /// Convert a GLWE ciphertext vector with 64 bits of precision from GPU 0 to a view on the CPU.
-impl GlweCiphertextDiscardingConversionEngine<CudaGlweCiphertext64, GlweCiphertextMutView64<'_>>
+impl GlweCiphertextDiscardingConversionGpuEngine<CudaGlweCiphertext64, GlweCiphertextMutView64<'_>>
     for CudaEngine
 {
     /// # Example
@@ -59,17 +59,17 @@ impl GlweCiphertextDiscardingConversionEngine<CudaGlweCiphertext64, GlweCipherte
     /// # }
     /// ```
     fn discard_convert_glwe_ciphertext(
-        &mut self,
+        &self,
         output: &mut GlweCiphertextMutView64,
         input: &CudaGlweCiphertext64,
-    ) -> Result<(), GlweCiphertextDiscardingConversionError<CudaError>> {
-        GlweCiphertextDiscardingConversionError::perform_generic_checks(output, input)?;
+    ) -> Result<(), GlweCiphertextDiscardingConversionGpuError<CudaError>> {
+        GlweCiphertextDiscardingConversionGpuError::perform_generic_checks(output, input)?;
         unsafe { self.discard_convert_glwe_ciphertext_unchecked(output, input) };
         Ok(())
     }
 
     unsafe fn discard_convert_glwe_ciphertext_unchecked(
-        &mut self,
+        &self,
         output: &mut GlweCiphertextMutView64,
         input: &CudaGlweCiphertext64,
     ) {

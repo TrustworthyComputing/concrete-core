@@ -7,17 +7,17 @@ use crate::prelude::{
     LweCiphertextEntity, LweCiphertextVectorEntity, LweKeyswitchKeyEntity,
 };
 use crate::specification::engines::{
-    LweCiphertextDiscardingBitExtractEngine, LweCiphertextDiscardingBitExtractError,
+    LweCiphertextDiscardingBitExtractGpuEngine, LweCiphertextDiscardingBitExtractGpuError,
 };
 
-impl From<CudaError> for LweCiphertextDiscardingBitExtractError<CudaError> {
+impl From<CudaError> for LweCiphertextDiscardingBitExtractGpuError<CudaError> {
     fn from(err: CudaError) -> Self {
         Self::Engine(err)
     }
 }
 
 impl
-    LweCiphertextDiscardingBitExtractEngine<
+    LweCiphertextDiscardingBitExtractGpuEngine<
         CudaFourierLweBootstrapKey32,
         CudaLweKeyswitchKey32,
         CudaLweCiphertext32,
@@ -25,17 +25,17 @@ impl
     > for CudaEngine
 {
     fn discard_extract_bits_lwe_ciphertext(
-        &mut self,
+        &self,
         output: &mut CudaLweCiphertextVector32,
         input: &CudaLweCiphertext32,
         bsk: &CudaFourierLweBootstrapKey32,
         ksk: &CudaLweKeyswitchKey32,
         extracted_bits_count: ExtractedBitsCount,
         delta_log: DeltaLog,
-    ) -> Result<(), LweCiphertextDiscardingBitExtractError<Self::EngineError>> {
+    ) -> Result<(), LweCiphertextDiscardingBitExtractGpuError<Self::EngineError>> {
         let poly_size = bsk.polynomial_size();
         check_poly_size!(poly_size);
-        LweCiphertextDiscardingBitExtractError::perform_generic_checks(
+        LweCiphertextDiscardingBitExtractGpuError::perform_generic_checks(
             output,
             input,
             bsk,
@@ -58,7 +58,7 @@ impl
     }
 
     unsafe fn discard_extract_bits_lwe_ciphertext_unchecked(
-        &mut self,
+        &self,
         output: &mut CudaLweCiphertextVector32,
         input: &CudaLweCiphertext32,
         bsk: &CudaFourierLweBootstrapKey32,
@@ -90,7 +90,7 @@ impl
 }
 
 impl
-    LweCiphertextDiscardingBitExtractEngine<
+    LweCiphertextDiscardingBitExtractGpuEngine<
         CudaFourierLweBootstrapKey64,
         CudaLweKeyswitchKey64,
         CudaLweCiphertext64,
@@ -98,17 +98,17 @@ impl
     > for CudaEngine
 {
     fn discard_extract_bits_lwe_ciphertext(
-        &mut self,
+        &self,
         output: &mut CudaLweCiphertextVector64,
         input: &CudaLweCiphertext64,
         bsk: &CudaFourierLweBootstrapKey64,
         ksk: &CudaLweKeyswitchKey64,
         extracted_bits_count: ExtractedBitsCount,
         delta_log: DeltaLog,
-    ) -> Result<(), LweCiphertextDiscardingBitExtractError<Self::EngineError>> {
+    ) -> Result<(), LweCiphertextDiscardingBitExtractGpuError<Self::EngineError>> {
         let poly_size = bsk.polynomial_size();
         check_poly_size!(poly_size);
-        LweCiphertextDiscardingBitExtractError::perform_generic_checks(
+        LweCiphertextDiscardingBitExtractGpuError::perform_generic_checks(
             output,
             input,
             bsk,
@@ -131,7 +131,7 @@ impl
     }
 
     unsafe fn discard_extract_bits_lwe_ciphertext_unchecked(
-        &mut self,
+        &self,
         output: &mut CudaLweCiphertextVector64,
         input: &CudaLweCiphertext64,
         bsk: &CudaFourierLweBootstrapKey64,

@@ -2,10 +2,11 @@ use crate::backends::cuda::engines::{CudaEngine, CudaError};
 use crate::backends::cuda::implementation::entities::CudaGlweCiphertextVector64;
 use crate::prelude::GlweCiphertextVectorMutView64;
 use crate::specification::engines::{
-    GlweCiphertextVectorDiscardingConversionEngine, GlweCiphertextVectorDiscardingConversionError,
+    GlweCiphertextVectorDiscardingConversionGpuEngine,
+    GlweCiphertextVectorDiscardingConversionGpuError,
 };
 
-impl From<CudaError> for GlweCiphertextVectorDiscardingConversionError<CudaError> {
+impl From<CudaError> for GlweCiphertextVectorDiscardingConversionGpuError<CudaError> {
     fn from(err: CudaError) -> Self {
         Self::Engine(err)
     }
@@ -16,7 +17,7 @@ impl From<CudaError> for GlweCiphertextVectorDiscardingConversionError<CudaError
 /// This conversion is not necessary to run the bootstrap on the GPU.
 /// It is implemented for testing purposes only.
 impl
-    GlweCiphertextVectorDiscardingConversionEngine<
+    GlweCiphertextVectorDiscardingConversionGpuEngine<
         CudaGlweCiphertextVector64,
         GlweCiphertextVectorMutView64<'_>,
     > for CudaEngine
@@ -92,16 +93,16 @@ impl
     /// # }
     /// ```
     fn discard_convert_glwe_ciphertext_vector(
-        &mut self,
+        &self,
         output: &mut GlweCiphertextVectorMutView64,
         input: &CudaGlweCiphertextVector64,
-    ) -> Result<(), GlweCiphertextVectorDiscardingConversionError<CudaError>> {
+    ) -> Result<(), GlweCiphertextVectorDiscardingConversionGpuError<CudaError>> {
         unsafe { self.discard_convert_glwe_ciphertext_vector_unchecked(output, input) };
         Ok(())
     }
 
     unsafe fn discard_convert_glwe_ciphertext_vector_unchecked(
-        &mut self,
+        &self,
         output: &mut GlweCiphertextVectorMutView64,
         input: &CudaGlweCiphertextVector64,
     ) {

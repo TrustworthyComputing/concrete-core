@@ -35,14 +35,16 @@ where
     OutputCiphertextVector: LweCiphertextVectorEntity,
 {
     fn discard_not_lwe_ciphertext_vector(
-        &mut self,
+        &self,
         output: &mut OutputCiphertextVector,
         input: &InputCiphertextVector,
+        stream_idx: usize,
     ) -> Result<(), LweCiphertextVectorDiscardingNotError<Self::EngineError>>;
 
     unsafe fn discard_not_lwe_ciphertext_vector_unchecked(
-        &mut self,
+        &self,
         output: &mut OutputCiphertextVector,
         input: &InputCiphertextVector,
+        stream_idx: usize,
     );
 }

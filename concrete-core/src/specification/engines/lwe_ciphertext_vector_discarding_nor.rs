@@ -49,20 +49,22 @@ pub trait LweCiphertextVectorDiscardingNorEngine<
     KeyswitchKey: LweKeyswitchKeyEntity,
 {
     fn discard_nor_lwe_ciphertext_vector(
-        &mut self,
+        &self,
         output: &mut OutputCiphertextVector,
         input_1: &InputCiphertextVector,
         input_2: &InputCiphertextVector,
         bsk: &BootstrapKey,
         ksk: &KeyswitchKey,
+        stream_idx: usize,
     ) -> Result<(), LweCiphertextVectorDiscardingNorError<Self::EngineError>>;
 
     unsafe fn discard_nor_lwe_ciphertext_vector_unchecked(
-        &mut self,
+        &self,
         output: &mut OutputCiphertextVector,
         input_1: &InputCiphertextVector,
         input_2: &InputCiphertextVector,
         bsk: &BootstrapKey,
         ksk: &KeyswitchKey,
+        stream_idx: usize,
     );
 }

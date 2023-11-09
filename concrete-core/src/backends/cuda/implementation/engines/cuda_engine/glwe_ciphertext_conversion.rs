@@ -5,11 +5,11 @@ use crate::commons::crypto::glwe::GlweCiphertext;
 use crate::commons::math::tensor::{AsRefSlice, AsRefTensor};
 use crate::prelude::{GlweCiphertext32, GlweCiphertext64, GlweCiphertextView64};
 use crate::specification::engines::{
-    GlweCiphertextConversionEngine, GlweCiphertextConversionError,
+    GlweCiphertextConversionGpuEngine, GlweCiphertextConversionGpuError,
 };
 use crate::specification::entities::GlweCiphertextEntity;
 
-impl From<CudaError> for GlweCiphertextConversionError<CudaError> {
+impl From<CudaError> for GlweCiphertextConversionGpuError<CudaError> {
     fn from(err: CudaError) -> Self {
         Self::Engine(err)
     }
@@ -18,7 +18,7 @@ impl From<CudaError> for GlweCiphertextConversionError<CudaError> {
 /// # Description
 /// Convert a GLWE ciphertext with 32 bits of precision from CPU to GPU 0.
 /// Only this conversion is necessary to run the bootstrap on the GPU.
-impl GlweCiphertextConversionEngine<GlweCiphertext32, CudaGlweCiphertext32> for CudaEngine {
+impl GlweCiphertextConversionGpuEngine<GlweCiphertext32, CudaGlweCiphertext32> for CudaEngine {
     /// # Example
     /// ```
     /// use concrete_core::prelude::{GlweCiphertextCount, GlweDimension, PolynomialSize, Variance, *};
@@ -52,14 +52,14 @@ impl GlweCiphertextConversionEngine<GlweCiphertext32, CudaGlweCiphertext32> for 
     /// # }
     /// ```
     fn convert_glwe_ciphertext(
-        &mut self,
+        &self,
         input: &GlweCiphertext32,
-    ) -> Result<CudaGlweCiphertext32, GlweCiphertextConversionError<CudaError>> {
+    ) -> Result<CudaGlweCiphertext32, GlweCiphertextConversionGpuError<CudaError>> {
         Ok(unsafe { self.convert_glwe_ciphertext_unchecked(input) })
     }
 
     unsafe fn convert_glwe_ciphertext_unchecked(
-        &mut self,
+        &self,
         input: &GlweCiphertext32,
     ) -> CudaGlweCiphertext32 {
         // Copy the entire input vector over all GPUs
@@ -82,7 +82,7 @@ impl GlweCiphertextConversionEngine<GlweCiphertext32, CudaGlweCiphertext32> for 
 /// Convert a GLWE ciphertext vector with 32 bits of precision from GPU 0 to CPU.
 /// This conversion is not necessary to run the bootstrap on the GPU.
 /// It is implemented for testing purposes only.
-impl GlweCiphertextConversionEngine<CudaGlweCiphertext32, GlweCiphertext32> for CudaEngine {
+impl GlweCiphertextConversionGpuEngine<CudaGlweCiphertext32, GlweCiphertext32> for CudaEngine {
     /// # Example
     /// ```
     /// use concrete_core::prelude::{GlweCiphertextCount, GlweDimension, PolynomialSize, Variance, *};
@@ -119,14 +119,14 @@ impl GlweCiphertextConversionEngine<CudaGlweCiphertext32, GlweCiphertext32> for 
     /// # }
     /// ```
     fn convert_glwe_ciphertext(
-        &mut self,
+        &self,
         input: &CudaGlweCiphertext32,
-    ) -> Result<GlweCiphertext32, GlweCiphertextConversionError<CudaError>> {
+    ) -> Result<GlweCiphertext32, GlweCiphertextConversionGpuError<CudaError>> {
         Ok(unsafe { self.convert_glwe_ciphertext_unchecked(input) })
     }
 
     unsafe fn convert_glwe_ciphertext_unchecked(
-        &mut self,
+        &self,
         input: &CudaGlweCiphertext32,
     ) -> GlweCiphertext32 {
         // Copy the data from GPU 0 back to the CPU
@@ -144,7 +144,7 @@ impl GlweCiphertextConversionEngine<CudaGlweCiphertext32, GlweCiphertext32> for 
 /// # Description
 /// Convert a GLWE ciphertext with 64 bits of precision from CPU to GPU 0.
 /// Only this conversion is necessary to run the bootstrap on the GPU.
-impl GlweCiphertextConversionEngine<GlweCiphertext64, CudaGlweCiphertext64> for CudaEngine {
+impl GlweCiphertextConversionGpuEngine<GlweCiphertext64, CudaGlweCiphertext64> for CudaEngine {
     /// # Example
     /// ```
     /// use concrete_core::prelude::{GlweCiphertextCount, GlweDimension, PolynomialSize, Variance, *};
@@ -178,14 +178,14 @@ impl GlweCiphertextConversionEngine<GlweCiphertext64, CudaGlweCiphertext64> for 
     /// # }
     /// ```
     fn convert_glwe_ciphertext(
-        &mut self,
+        &self,
         input: &GlweCiphertext64,
-    ) -> Result<CudaGlweCiphertext64, GlweCiphertextConversionError<CudaError>> {
+    ) -> Result<CudaGlweCiphertext64, GlweCiphertextConversionGpuError<CudaError>> {
         Ok(unsafe { self.convert_glwe_ciphertext_unchecked(input) })
     }
 
     unsafe fn convert_glwe_ciphertext_unchecked(
-        &mut self,
+        &self,
         input: &GlweCiphertext64,
     ) -> CudaGlweCiphertext64 {
         // Copy the entire input vector over all GPUs
@@ -208,7 +208,7 @@ impl GlweCiphertextConversionEngine<GlweCiphertext64, CudaGlweCiphertext64> for 
 /// Convert a GLWE ciphertext vector with 64 bits of precision from GPU 0 to CPU.
 /// This conversion is not necessary to run the bootstrap on the GPU.
 /// It is implemented for testing purposes only.
-impl GlweCiphertextConversionEngine<CudaGlweCiphertext64, GlweCiphertext64> for CudaEngine {
+impl GlweCiphertextConversionGpuEngine<CudaGlweCiphertext64, GlweCiphertext64> for CudaEngine {
     /// # Example
     /// ```
     /// use concrete_core::prelude::{GlweCiphertextCount, GlweDimension, PolynomialSize, Variance, *};
@@ -245,14 +245,14 @@ impl GlweCiphertextConversionEngine<CudaGlweCiphertext64, GlweCiphertext64> for 
     /// # }
     /// ```
     fn convert_glwe_ciphertext(
-        &mut self,
+        &self,
         input: &CudaGlweCiphertext64,
-    ) -> Result<GlweCiphertext64, GlweCiphertextConversionError<CudaError>> {
+    ) -> Result<GlweCiphertext64, GlweCiphertextConversionGpuError<CudaError>> {
         Ok(unsafe { self.convert_glwe_ciphertext_unchecked(input) })
     }
 
     unsafe fn convert_glwe_ciphertext_unchecked(
-        &mut self,
+        &self,
         input: &CudaGlweCiphertext64,
     ) -> GlweCiphertext64 {
         // Copy the data from GPU 0 back to the CPU
@@ -269,7 +269,9 @@ impl GlweCiphertextConversionEngine<CudaGlweCiphertext64, GlweCiphertext64> for 
 
 /// # Description
 /// Convert a view of a GLWE ciphertext with 64 bits of precision from CPU to GPU 0.
-impl GlweCiphertextConversionEngine<GlweCiphertextView64<'_>, CudaGlweCiphertext64> for CudaEngine {
+impl GlweCiphertextConversionGpuEngine<GlweCiphertextView64<'_>, CudaGlweCiphertext64>
+    for CudaEngine
+{
     /// # Example
     /// ```
     /// use concrete_core::prelude::{GlweCiphertextCount, GlweDimension, PolynomialSize, Variance, *};
@@ -315,14 +317,14 @@ impl GlweCiphertextConversionEngine<GlweCiphertextView64<'_>, CudaGlweCiphertext
     /// # }
     /// ```
     fn convert_glwe_ciphertext(
-        &mut self,
+        &self,
         input: &GlweCiphertextView64,
-    ) -> Result<CudaGlweCiphertext64, GlweCiphertextConversionError<CudaError>> {
+    ) -> Result<CudaGlweCiphertext64, GlweCiphertextConversionGpuError<CudaError>> {
         Ok(unsafe { self.convert_glwe_ciphertext_unchecked(input) })
     }
 
     unsafe fn convert_glwe_ciphertext_unchecked(
-        &mut self,
+        &self,
         input: &GlweCiphertextView64,
     ) -> CudaGlweCiphertext64 {
         // Copy the entire input vector over all GPUs

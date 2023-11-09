@@ -92,6 +92,7 @@ pub(crate) unsafe fn execute_lwe_ciphertext_vector_fp_keyswitch_on_gpu<T: Unsign
     output: &mut CudaGlweCiphertext<T>,
     input: &CudaLweList<T>,
     fp_ksk_list: &CudaLwePrivateFunctionalPackingKeyswitchKeyList<T>,
+    stream_idx: usize,
     number_of_available_gpus: NumberOfGpus,
 ) {
     let number_of_gpus = number_of_active_gpus(
@@ -105,7 +106,11 @@ pub(crate) unsafe fn execute_lwe_ciphertext_vector_fp_keyswitch_on_gpu<T: Unsign
             CiphertextCount(input.lwe_ciphertext_count.0),
             GpuIndex(gpu_index),
         );
-        let stream = &streams.get(gpu_index).unwrap().write().unwrap();
+        let stream = &streams
+            .get(stream_idx + gpu_index)
+            .unwrap()
+            .write()
+            .unwrap();
 
         stream.discard_fp_keyswitch_lwe_to_glwe::<T>(
             &mut output.d_vec,

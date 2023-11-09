@@ -3,13 +3,13 @@ use crate::backends::cuda::implementation::entities::{CudaLweCiphertext32, CudaL
 use crate::commons::math::tensor::{AsMutSlice, AsRefSlice};
 use crate::prelude::{LweCiphertext32, LweCiphertextMutView32, LweCiphertextMutView64};
 use crate::specification::engines::{
-    LweCiphertextDiscardingConversionEngine, LweCiphertextDiscardingConversionError,
+    LweCiphertextDiscardingConversionGpuEngine, LweCiphertextDiscardingConversionGpuError,
 };
 
 /// # Description
 ///
 /// Convert an LWE ciphertext with 32 bits of precision from GPU 0 to a view on the CPU.
-impl LweCiphertextDiscardingConversionEngine<CudaLweCiphertext32, LweCiphertextMutView32<'_>>
+impl LweCiphertextDiscardingConversionGpuEngine<CudaLweCiphertext32, LweCiphertextMutView32<'_>>
     for CudaEngine
 {
     /// # Example
@@ -55,16 +55,16 @@ impl LweCiphertextDiscardingConversionEngine<CudaLweCiphertext32, LweCiphertextM
     /// # }
     /// ```
     fn discard_convert_lwe_ciphertext(
-        &mut self,
+        &self,
         output: &mut LweCiphertextMutView32,
         input: &CudaLweCiphertext32,
-    ) -> Result<(), LweCiphertextDiscardingConversionError<CudaError>> {
+    ) -> Result<(), LweCiphertextDiscardingConversionGpuError<CudaError>> {
         unsafe { self.discard_convert_lwe_ciphertext_unchecked(output, input) };
         Ok(())
     }
 
     unsafe fn discard_convert_lwe_ciphertext_unchecked(
-        &mut self,
+        &self,
         output: &mut LweCiphertextMutView32,
         input: &CudaLweCiphertext32,
     ) {
@@ -76,7 +76,9 @@ impl LweCiphertextDiscardingConversionEngine<CudaLweCiphertext32, LweCiphertextM
 /// # Description
 ///
 /// Convert an LWE ciphertext with 32 bits of precision from GPU 0 to a ciphertext on the CPU.
-impl LweCiphertextDiscardingConversionEngine<CudaLweCiphertext32, LweCiphertext32> for CudaEngine {
+impl LweCiphertextDiscardingConversionGpuEngine<CudaLweCiphertext32, LweCiphertext32>
+    for CudaEngine
+{
     /// # Example
     /// ```
     /// use concrete_core::prelude::{LweCiphertextCount, LweDimension, Variance, *};
@@ -120,16 +122,16 @@ impl LweCiphertextDiscardingConversionEngine<CudaLweCiphertext32, LweCiphertext3
     /// # }
     /// ```
     fn discard_convert_lwe_ciphertext(
-        &mut self,
+        &self,
         output: &mut LweCiphertext32,
         input: &CudaLweCiphertext32,
-    ) -> Result<(), LweCiphertextDiscardingConversionError<CudaError>> {
+    ) -> Result<(), LweCiphertextDiscardingConversionGpuError<CudaError>> {
         unsafe { self.discard_convert_lwe_ciphertext_unchecked(output, input) };
         Ok(())
     }
 
     unsafe fn discard_convert_lwe_ciphertext_unchecked(
-        &mut self,
+        &self,
         output: &mut LweCiphertext32,
         input: &CudaLweCiphertext32,
     ) {
@@ -141,7 +143,9 @@ impl LweCiphertextDiscardingConversionEngine<CudaLweCiphertext32, LweCiphertext3
 /// # Description
 ///
 /// Convert an LWE ciphertext with 32 bits of precision from CPU to a ciphertext on the GPU 0.
-impl LweCiphertextDiscardingConversionEngine<LweCiphertext32, CudaLweCiphertext32> for CudaEngine {
+impl LweCiphertextDiscardingConversionGpuEngine<LweCiphertext32, CudaLweCiphertext32>
+    for CudaEngine
+{
     /// # Example
     /// ```
     /// use concrete_core::prelude::{LweCiphertextCount, LweDimension, Variance, *};
@@ -187,16 +191,16 @@ impl LweCiphertextDiscardingConversionEngine<LweCiphertext32, CudaLweCiphertext3
     /// # }
     /// ```
     fn discard_convert_lwe_ciphertext(
-        &mut self,
+        &self,
         output: &mut CudaLweCiphertext32,
         input: &LweCiphertext32,
-    ) -> Result<(), LweCiphertextDiscardingConversionError<CudaError>> {
+    ) -> Result<(), LweCiphertextDiscardingConversionGpuError<CudaError>> {
         unsafe { self.discard_convert_lwe_ciphertext_unchecked(output, input) };
         Ok(())
     }
 
     unsafe fn discard_convert_lwe_ciphertext_unchecked(
-        &mut self,
+        &self,
         output: &mut CudaLweCiphertext32,
         input: &LweCiphertext32,
     ) {
@@ -208,7 +212,7 @@ impl LweCiphertextDiscardingConversionEngine<LweCiphertext32, CudaLweCiphertext3
 /// # Description
 ///
 /// Convert an LWE ciphertext with 64 bits of precision from GPU 0 to a view on the CPU.
-impl LweCiphertextDiscardingConversionEngine<CudaLweCiphertext64, LweCiphertextMutView64<'_>>
+impl LweCiphertextDiscardingConversionGpuEngine<CudaLweCiphertext64, LweCiphertextMutView64<'_>>
     for CudaEngine
 {
     /// # Example
@@ -255,16 +259,16 @@ impl LweCiphertextDiscardingConversionEngine<CudaLweCiphertext64, LweCiphertextM
     /// # }
     /// ```
     fn discard_convert_lwe_ciphertext(
-        &mut self,
+        &self,
         output: &mut LweCiphertextMutView64,
         input: &CudaLweCiphertext64,
-    ) -> Result<(), LweCiphertextDiscardingConversionError<CudaError>> {
+    ) -> Result<(), LweCiphertextDiscardingConversionGpuError<CudaError>> {
         unsafe { self.discard_convert_lwe_ciphertext_unchecked(output, input) };
         Ok(())
     }
 
     unsafe fn discard_convert_lwe_ciphertext_unchecked(
-        &mut self,
+        &self,
         output: &mut LweCiphertextMutView64,
         input: &CudaLweCiphertext64,
     ) {

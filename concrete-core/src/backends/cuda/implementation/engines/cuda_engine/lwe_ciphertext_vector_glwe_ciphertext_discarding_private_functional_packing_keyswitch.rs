@@ -5,104 +5,110 @@ use crate::prelude::{
     CudaLwePrivateFunctionalPackingKeyswitchKey64,
 };
 use crate::specification::engines::{
-    LweCiphertextVectorGlweCiphertextDiscardingPrivateFunctionalPackingKeyswitchEngine,
-    LweCiphertextVectorGlweCiphertextDiscardingPrivateFunctionalPackingKeyswitchError,
+    LweCiphertextVectorGlweCiphertextDiscardingPrivateFunctionalPackingKeyswitchGpuEngine,
+    LweCiphertextVectorGlweCiphertextDiscardingPrivateFunctionalPackingKeyswitchGpuError,
 };
 
 /// # Description:
 /// Implementation of
-/// [`LweCiphertextVectorGlweCiphertextDiscardingPrivateFunctionalPackingKeyswitchEngine`] for
+/// [`LweCiphertextVectorGlweCiphertextDiscardingPrivateFunctionalPackingKeyswitchGpuEngine`] for
 /// [`CudaEngine`] that operates on 32 bits integers.
 impl
-    LweCiphertextVectorGlweCiphertextDiscardingPrivateFunctionalPackingKeyswitchEngine<
+    LweCiphertextVectorGlweCiphertextDiscardingPrivateFunctionalPackingKeyswitchGpuEngine<
         CudaLwePrivateFunctionalPackingKeyswitchKey32,
         CudaLweCiphertextVector32,
         CudaGlweCiphertext32,
     > for CudaEngine
 {
     fn discard_private_functional_packing_keyswitch_lwe_ciphertext_vector(
-        &mut self,
+        &self,
         output: &mut CudaGlweCiphertext32,
         input: &CudaLweCiphertextVector32,
         pfpksk: &CudaLwePrivateFunctionalPackingKeyswitchKey32,
+        stream_idx: usize,
     ) -> Result<
         (),
-        LweCiphertextVectorGlweCiphertextDiscardingPrivateFunctionalPackingKeyswitchError<
+        LweCiphertextVectorGlweCiphertextDiscardingPrivateFunctionalPackingKeyswitchGpuError<
             Self::EngineError,
         >,
     > {
-        LweCiphertextVectorGlweCiphertextDiscardingPrivateFunctionalPackingKeyswitchError
+        LweCiphertextVectorGlweCiphertextDiscardingPrivateFunctionalPackingKeyswitchGpuError
         ::perform_generic_checks(
             output, input, pfpksk,
         )?;
         unsafe {
             self.discard_private_functional_packing_keyswitch_lwe_ciphertext_vector_unchecked(
-                output, input, pfpksk,
+                output, input, pfpksk, stream_idx,
             )
         };
         Ok(())
     }
 
     unsafe fn discard_private_functional_packing_keyswitch_lwe_ciphertext_vector_unchecked(
-        &mut self,
+        &self,
         output: &mut CudaGlweCiphertext32,
         input: &CudaLweCiphertextVector32,
         pfpksk: &CudaLwePrivateFunctionalPackingKeyswitchKey32,
+        stream_idx: usize,
     ) {
         execute_lwe_ciphertext_vector_fp_keyswitch_on_gpu::<u32>(
             self.get_cuda_streams(),
             &mut output.0,
             &input.0,
             &pfpksk.0,
+            stream_idx,
             self.get_number_of_gpus(),
         );
     }
 }
 /// # Description:
 /// Implementation of
-/// [`LweCiphertextVectorGlweCiphertextDiscardingPrivateFunctionalPackingKeyswitchEngine`] for
+/// [`LweCiphertextVectorGlweCiphertextDiscardingPrivateFunctionalPackingKeyswitchGpuEngine`] for
 /// [`CudaEngine`] that operates on 64 bits integers.
 impl
-    LweCiphertextVectorGlweCiphertextDiscardingPrivateFunctionalPackingKeyswitchEngine<
+    LweCiphertextVectorGlweCiphertextDiscardingPrivateFunctionalPackingKeyswitchGpuEngine<
         CudaLwePrivateFunctionalPackingKeyswitchKey64,
         CudaLweCiphertextVector64,
         CudaGlweCiphertext64,
     > for CudaEngine
 {
     fn discard_private_functional_packing_keyswitch_lwe_ciphertext_vector(
-        &mut self,
+        &self,
         output: &mut CudaGlweCiphertext64,
         input: &CudaLweCiphertextVector64,
         pfpksk: &CudaLwePrivateFunctionalPackingKeyswitchKey64,
+        stream_idx: usize,
     ) -> Result<
         (),
-        LweCiphertextVectorGlweCiphertextDiscardingPrivateFunctionalPackingKeyswitchError<
+        LweCiphertextVectorGlweCiphertextDiscardingPrivateFunctionalPackingKeyswitchGpuError<
             Self::EngineError,
         >,
     > {
-        LweCiphertextVectorGlweCiphertextDiscardingPrivateFunctionalPackingKeyswitchError
+        LweCiphertextVectorGlweCiphertextDiscardingPrivateFunctionalPackingKeyswitchGpuError
         ::perform_generic_checks(
             output, input, pfpksk,
         )?;
         unsafe {
             self.discard_private_functional_packing_keyswitch_lwe_ciphertext_vector_unchecked(
-                output, input, pfpksk,
+                output, input, pfpksk, stream_idx,
             )
         };
         Ok(())
     }
 
     unsafe fn discard_private_functional_packing_keyswitch_lwe_ciphertext_vector_unchecked(
-        &mut self,
+        &self,
         output: &mut CudaGlweCiphertext64,
         input: &CudaLweCiphertextVector64,
         pfpksk: &CudaLwePrivateFunctionalPackingKeyswitchKey64,
+        stream_idx: usize,
     ) {
         execute_lwe_ciphertext_vector_fp_keyswitch_on_gpu::<u64>(
             self.get_cuda_streams(),
             &mut output.0,
             &input.0,
             &pfpksk.0,
+            stream_idx,
             self.get_number_of_gpus(),
         );
     }

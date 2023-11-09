@@ -4,47 +4,48 @@ use crate::prelude::{
     CudaLweCiphertextVector64,
 };
 use crate::specification::engines::{
-    LweCiphertextVectorCleartextVectorDiscardingMultiplicationEngine,
-    LweCiphertextVectorCleartextVectorDiscardingMultiplicationError,
+    LweCiphertextVectorCleartextVectorDiscardingMultiplicationGpuEngine,
+    LweCiphertextVectorCleartextVectorDiscardingMultiplicationGpuError,
 };
 
 /// # Description:
-/// Implementation of [`LweCiphertextVectorCleartextVectorDiscardingMultiplicationEngine`] for
+/// Implementation of [`LweCiphertextVectorCleartextVectorDiscardingMultiplicationGpuEngine`] for
 /// [`CudaEngine`] that operates on 32 bits integers.
 impl
-    LweCiphertextVectorCleartextVectorDiscardingMultiplicationEngine<
+    LweCiphertextVectorCleartextVectorDiscardingMultiplicationGpuEngine<
         CudaLweCiphertextVector32,
         CudaCleartextVector32,
         CudaLweCiphertextVector32,
     > for CudaEngine
 {
     fn discard_mul_lwe_ciphertext_vector_cleartext_vector(
-        &mut self,
+        &self,
         output: &mut CudaLweCiphertextVector32,
         input_1: &CudaLweCiphertextVector32,
         input_2: &CudaCleartextVector32,
+        stream_idx: usize,
     ) -> Result<
         (),
-        LweCiphertextVectorCleartextVectorDiscardingMultiplicationError<Self::EngineError>,
+        LweCiphertextVectorCleartextVectorDiscardingMultiplicationGpuError<Self::EngineError>,
     > {
-        LweCiphertextVectorCleartextVectorDiscardingMultiplicationError::perform_generic_checks(
+        LweCiphertextVectorCleartextVectorDiscardingMultiplicationGpuError::perform_generic_checks(
             output, input_1, input_2,
         )?;
         unsafe {
             self.discard_mul_lwe_ciphertext_vector_cleartext_vector_unchecked(
-                output, input_1, input_2,
+                output, input_1, input_2, stream_idx,
             )
         };
         Ok(())
     }
 
     unsafe fn discard_mul_lwe_ciphertext_vector_cleartext_vector_unchecked(
-        &mut self,
+        &self,
         output: &mut CudaLweCiphertextVector32,
         input_1: &CudaLweCiphertextVector32,
         input_2: &CudaCleartextVector32,
+        stream_idx: usize,
     ) {
-        let stream_idx = self.get_curr_stream_idx();
         let stream = &*self.get_cuda_streams()[stream_idx].read().unwrap();
         execute_lwe_ciphertext_vector_cleartext_vector_multiplication_on_gpu::<u32>(
             stream,
@@ -57,42 +58,43 @@ impl
 }
 
 /// # Description:
-/// Implementation of [`LweCiphertextVectorCleartextVectorDiscardingMultiplicationEngine`] for
+/// Implementation of [`LweCiphertextVectorCleartextVectorDiscardingMultiplicationGpuEngine`] for
 /// [`CudaEngine`] that operates on 64 bits integers.
 impl
-    LweCiphertextVectorCleartextVectorDiscardingMultiplicationEngine<
+    LweCiphertextVectorCleartextVectorDiscardingMultiplicationGpuEngine<
         CudaLweCiphertextVector64,
         CudaCleartextVector64,
         CudaLweCiphertextVector64,
     > for CudaEngine
 {
     fn discard_mul_lwe_ciphertext_vector_cleartext_vector(
-        &mut self,
+        &self,
         output: &mut CudaLweCiphertextVector64,
         input_1: &CudaLweCiphertextVector64,
         input_2: &CudaCleartextVector64,
+        stream_idx: usize,
     ) -> Result<
         (),
-        LweCiphertextVectorCleartextVectorDiscardingMultiplicationError<Self::EngineError>,
+        LweCiphertextVectorCleartextVectorDiscardingMultiplicationGpuError<Self::EngineError>,
     > {
-        LweCiphertextVectorCleartextVectorDiscardingMultiplicationError::perform_generic_checks(
+        LweCiphertextVectorCleartextVectorDiscardingMultiplicationGpuError::perform_generic_checks(
             output, input_1, input_2,
         )?;
         unsafe {
             self.discard_mul_lwe_ciphertext_vector_cleartext_vector_unchecked(
-                output, input_1, input_2,
+                output, input_1, input_2, stream_idx,
             )
         };
         Ok(())
     }
 
     unsafe fn discard_mul_lwe_ciphertext_vector_cleartext_vector_unchecked(
-        &mut self,
+        &self,
         output: &mut CudaLweCiphertextVector64,
         input_1: &CudaLweCiphertextVector64,
         input_2: &CudaCleartextVector64,
+        stream_idx: usize,
     ) {
-        let stream_idx = self.get_curr_stream_idx();
         let stream = &*self.get_cuda_streams()[stream_idx].read().unwrap();
         execute_lwe_ciphertext_vector_cleartext_vector_multiplication_on_gpu::<u64>(
             stream,

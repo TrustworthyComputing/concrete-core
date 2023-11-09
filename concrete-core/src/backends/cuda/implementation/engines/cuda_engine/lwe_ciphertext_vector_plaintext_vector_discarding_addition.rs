@@ -1,42 +1,43 @@
 use crate::backends::cuda::private::crypto::lwe::list::execute_lwe_ciphertext_vector_plaintext_vector_addition_on_gpu;
 use crate::prelude::{
     CudaEngine, CudaLweCiphertextVector32, CudaLweCiphertextVector64, CudaPlaintextVector32,
-    CudaPlaintextVector64, LweCiphertextVectorPlaintextVectorDiscardingAdditionEngine,
-    LweCiphertextVectorPlaintextVectorDiscardingAdditionError,
+    CudaPlaintextVector64, LweCiphertextVectorPlaintextVectorDiscardingAdditionGpuEngine,
+    LweCiphertextVectorPlaintextVectorDiscardingAdditionGpuError,
 };
 
 impl
-    LweCiphertextVectorPlaintextVectorDiscardingAdditionEngine<
+    LweCiphertextVectorPlaintextVectorDiscardingAdditionGpuEngine<
         CudaLweCiphertextVector32,
         CudaPlaintextVector32,
         CudaLweCiphertextVector32,
     > for CudaEngine
 {
     fn discard_add_lwe_ciphertext_vector_plaintext_vector(
-        &mut self,
+        &self,
         output: &mut CudaLweCiphertextVector32,
         input_1: &CudaLweCiphertextVector32,
         input_2: &CudaPlaintextVector32,
-    ) -> Result<(), LweCiphertextVectorPlaintextVectorDiscardingAdditionError<Self::EngineError>>
+        stream_idx: usize,
+    ) -> Result<(), LweCiphertextVectorPlaintextVectorDiscardingAdditionGpuError<Self::EngineError>>
     {
-        LweCiphertextVectorPlaintextVectorDiscardingAdditionError::perform_generic_checks(
+        LweCiphertextVectorPlaintextVectorDiscardingAdditionGpuError::perform_generic_checks(
             output, input_1, input_2,
         )?;
         unsafe {
             self.discard_add_lwe_ciphertext_vector_plaintext_vector_unchecked(
-                output, input_1, input_2,
+                output, input_1, input_2, stream_idx,
             )
         };
         Ok(())
     }
 
     unsafe fn discard_add_lwe_ciphertext_vector_plaintext_vector_unchecked(
-        &mut self,
+        &self,
         output: &mut CudaLweCiphertextVector32,
         input_1: &CudaLweCiphertextVector32,
         input_2: &CudaPlaintextVector32,
+        stream_idx: usize,
     ) {
-        let stream_idx = self.get_curr_stream_idx();
         let stream = &*self.get_cuda_streams()[stream_idx].read().unwrap();
         execute_lwe_ciphertext_vector_plaintext_vector_addition_on_gpu::<u32>(
             stream,
@@ -49,37 +50,38 @@ impl
 }
 
 impl
-    LweCiphertextVectorPlaintextVectorDiscardingAdditionEngine<
+    LweCiphertextVectorPlaintextVectorDiscardingAdditionGpuEngine<
         CudaLweCiphertextVector64,
         CudaPlaintextVector64,
         CudaLweCiphertextVector64,
     > for CudaEngine
 {
     fn discard_add_lwe_ciphertext_vector_plaintext_vector(
-        &mut self,
+        &self,
         output: &mut CudaLweCiphertextVector64,
         input_1: &CudaLweCiphertextVector64,
         input_2: &CudaPlaintextVector64,
-    ) -> Result<(), LweCiphertextVectorPlaintextVectorDiscardingAdditionError<Self::EngineError>>
+        stream_idx: usize,
+    ) -> Result<(), LweCiphertextVectorPlaintextVectorDiscardingAdditionGpuError<Self::EngineError>>
     {
-        LweCiphertextVectorPlaintextVectorDiscardingAdditionError::perform_generic_checks(
+        LweCiphertextVectorPlaintextVectorDiscardingAdditionGpuError::perform_generic_checks(
             output, input_1, input_2,
         )?;
         unsafe {
             self.discard_add_lwe_ciphertext_vector_plaintext_vector_unchecked(
-                output, input_1, input_2,
+                output, input_1, input_2, stream_idx,
             )
         };
         Ok(())
     }
 
     unsafe fn discard_add_lwe_ciphertext_vector_plaintext_vector_unchecked(
-        &mut self,
+        &self,
         output: &mut CudaLweCiphertextVector64,
         input_1: &CudaLweCiphertextVector64,
         input_2: &CudaPlaintextVector64,
+        stream_idx: usize,
     ) {
-        let stream_idx = self.get_curr_stream_idx();
         let stream = &*self.get_cuda_streams()[stream_idx].read().unwrap();
         execute_lwe_ciphertext_vector_plaintext_vector_addition_on_gpu::<u64>(
             stream,

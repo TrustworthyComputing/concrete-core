@@ -11,29 +11,29 @@ use crate::prelude::{
     LwePrivateFunctionalPackingKeyswitchKey64,
 };
 use crate::specification::engines::{
-    LwePrivateFunctionalPackingKeyswitchKeyConversionEngine,
-    LwePrivateFunctionalPackingKeyswitchKeyConversionError,
+    LwePrivateFunctionalPackingKeyswitchKeyConversionGpuEngine,
+    LwePrivateFunctionalPackingKeyswitchKeyConversionGpuError,
 };
 use crate::specification::entities::LwePrivateFunctionalPackingKeyswitchKeyEntity;
 
-impl From<CudaError> for LwePrivateFunctionalPackingKeyswitchKeyConversionError<CudaError> {
+impl From<CudaError> for LwePrivateFunctionalPackingKeyswitchKeyConversionGpuError<CudaError> {
     fn from(err: CudaError) -> Self {
         Self::Engine(err)
     }
 }
 
 impl
-    LwePrivateFunctionalPackingKeyswitchKeyConversionEngine<
+    LwePrivateFunctionalPackingKeyswitchKeyConversionGpuEngine<
         LwePrivateFunctionalPackingKeyswitchKey32,
         CudaLwePrivateFunctionalPackingKeyswitchKey32,
     > for CudaEngine
 {
     fn convert_lwe_private_functional_packing_keyswitch_key(
-        &mut self,
+        &self,
         input: &LwePrivateFunctionalPackingKeyswitchKey32,
     ) -> Result<
         CudaLwePrivateFunctionalPackingKeyswitchKey32,
-        LwePrivateFunctionalPackingKeyswitchKeyConversionError<CudaError>,
+        LwePrivateFunctionalPackingKeyswitchKeyConversionGpuError<CudaError>,
     > {
         for gpu_index in 0..self.get_number_of_gpus().0 {
             let stream = &self.streams[gpu_index];
@@ -49,7 +49,7 @@ impl
     }
 
     unsafe fn convert_lwe_private_functional_packing_keyswitch_key_unchecked(
-        &mut self,
+        &self,
         input: &LwePrivateFunctionalPackingKeyswitchKey32,
     ) -> CudaLwePrivateFunctionalPackingKeyswitchKey32 {
         // Copy the entire input vector over all GPUs
@@ -80,23 +80,23 @@ impl
 }
 
 impl
-    LwePrivateFunctionalPackingKeyswitchKeyConversionEngine<
+    LwePrivateFunctionalPackingKeyswitchKeyConversionGpuEngine<
         CudaLwePrivateFunctionalPackingKeyswitchKey32,
         LwePrivateFunctionalPackingKeyswitchKey32,
     > for CudaEngine
 {
     fn convert_lwe_private_functional_packing_keyswitch_key(
-        &mut self,
+        &self,
         input: &CudaLwePrivateFunctionalPackingKeyswitchKey32,
     ) -> Result<
         LwePrivateFunctionalPackingKeyswitchKey32,
-        LwePrivateFunctionalPackingKeyswitchKeyConversionError<CudaError>,
+        LwePrivateFunctionalPackingKeyswitchKeyConversionGpuError<CudaError>,
     > {
         Ok(unsafe { self.convert_lwe_private_functional_packing_keyswitch_key_unchecked(input) })
     }
 
     unsafe fn convert_lwe_private_functional_packing_keyswitch_key_unchecked(
-        &mut self,
+        &self,
         input: &CudaLwePrivateFunctionalPackingKeyswitchKey32,
     ) -> LwePrivateFunctionalPackingKeyswitchKey32 {
         let data_per_gpu = input.decomposition_level_count().0
@@ -122,17 +122,17 @@ impl
 }
 
 impl
-    LwePrivateFunctionalPackingKeyswitchKeyConversionEngine<
+    LwePrivateFunctionalPackingKeyswitchKeyConversionGpuEngine<
         LwePrivateFunctionalPackingKeyswitchKey64,
         CudaLwePrivateFunctionalPackingKeyswitchKey64,
     > for CudaEngine
 {
     fn convert_lwe_private_functional_packing_keyswitch_key(
-        &mut self,
+        &self,
         input: &LwePrivateFunctionalPackingKeyswitchKey64,
     ) -> Result<
         CudaLwePrivateFunctionalPackingKeyswitchKey64,
-        LwePrivateFunctionalPackingKeyswitchKeyConversionError<CudaError>,
+        LwePrivateFunctionalPackingKeyswitchKeyConversionGpuError<CudaError>,
     > {
         for stream in self.streams.iter() {
             let data_per_gpu = input.decomposition_level_count().0
@@ -146,7 +146,7 @@ impl
     }
 
     unsafe fn convert_lwe_private_functional_packing_keyswitch_key_unchecked(
-        &mut self,
+        &self,
         input: &LwePrivateFunctionalPackingKeyswitchKey64,
     ) -> CudaLwePrivateFunctionalPackingKeyswitchKey64 {
         // Copy the entire input vector over all GPUs
@@ -177,23 +177,23 @@ impl
 }
 
 impl
-    LwePrivateFunctionalPackingKeyswitchKeyConversionEngine<
+    LwePrivateFunctionalPackingKeyswitchKeyConversionGpuEngine<
         CudaLwePrivateFunctionalPackingKeyswitchKey64,
         LwePrivateFunctionalPackingKeyswitchKey64,
     > for CudaEngine
 {
     fn convert_lwe_private_functional_packing_keyswitch_key(
-        &mut self,
+        &self,
         input: &CudaLwePrivateFunctionalPackingKeyswitchKey64,
     ) -> Result<
         LwePrivateFunctionalPackingKeyswitchKey64,
-        LwePrivateFunctionalPackingKeyswitchKeyConversionError<CudaError>,
+        LwePrivateFunctionalPackingKeyswitchKeyConversionGpuError<CudaError>,
     > {
         Ok(unsafe { self.convert_lwe_private_functional_packing_keyswitch_key_unchecked(input) })
     }
 
     unsafe fn convert_lwe_private_functional_packing_keyswitch_key_unchecked(
-        &mut self,
+        &self,
         input: &CudaLwePrivateFunctionalPackingKeyswitchKey64,
     ) -> LwePrivateFunctionalPackingKeyswitchKey64 {
         let data_per_gpu = input.decomposition_level_count().0

@@ -6,13 +6,13 @@ use crate::prelude::{
     CudaLweCircuitBootstrapPrivateFunctionalPackingKeyswitchKeys64,
     LweCircuitBootstrapPrivateFunctionalPackingKeyswitchKeys32,
     LweCircuitBootstrapPrivateFunctionalPackingKeyswitchKeys64,
-    LweCircuitBootstrapPrivateFunctionalPackingKeyswitchKeysConversionEngine,
+    LweCircuitBootstrapPrivateFunctionalPackingKeyswitchKeysConversionGpuEngine,
     LweCircuitBootstrapPrivateFunctionalPackingKeyswitchKeysEntity,
 };
-use crate::specification::engines::LweCircuitBootstrapPrivateFunctionalPackingKeyswitchKeysConversionError;
+use crate::specification::engines::LweCircuitBootstrapPrivateFunctionalPackingKeyswitchKeysConversionGpuError;
 
 impl From<CudaError>
-    for LweCircuitBootstrapPrivateFunctionalPackingKeyswitchKeysConversionError<CudaError>
+    for LweCircuitBootstrapPrivateFunctionalPackingKeyswitchKeysConversionGpuError<CudaError>
 {
     fn from(err: CudaError) -> Self {
         Self::Engine(err)
@@ -20,17 +20,17 @@ impl From<CudaError>
 }
 
 impl
-    LweCircuitBootstrapPrivateFunctionalPackingKeyswitchKeysConversionEngine<
+    LweCircuitBootstrapPrivateFunctionalPackingKeyswitchKeysConversionGpuEngine<
         LweCircuitBootstrapPrivateFunctionalPackingKeyswitchKeys32,
         CudaLweCircuitBootstrapPrivateFunctionalPackingKeyswitchKeys32,
     > for CudaEngine
 {
     fn convert_lwe_circuit_bootstrap_private_functional_packing_keyswitch_keys(
-        &mut self,
+        &self,
         input: &LweCircuitBootstrapPrivateFunctionalPackingKeyswitchKeys32,
     ) -> Result<
         CudaLweCircuitBootstrapPrivateFunctionalPackingKeyswitchKeys32,
-        LweCircuitBootstrapPrivateFunctionalPackingKeyswitchKeysConversionError<CudaError>,
+        LweCircuitBootstrapPrivateFunctionalPackingKeyswitchKeysConversionGpuError<CudaError>,
     > {
         for gpu_index in 0..self.get_number_of_gpus().0 {
             let stream = &self.streams[gpu_index];
@@ -51,7 +51,7 @@ impl
     }
 
     unsafe fn convert_lwe_circuit_bootstrap_private_functional_packing_keyswitch_keys_unchecked(
-        &mut self,
+        &self,
         input: &LweCircuitBootstrapPrivateFunctionalPackingKeyswitchKeys32,
     ) -> CudaLweCircuitBootstrapPrivateFunctionalPackingKeyswitchKeys32 {
         // Copy the entire input vector over all GPUs
@@ -83,17 +83,17 @@ impl
 }
 
 impl
-    LweCircuitBootstrapPrivateFunctionalPackingKeyswitchKeysConversionEngine<
+    LweCircuitBootstrapPrivateFunctionalPackingKeyswitchKeysConversionGpuEngine<
         CudaLweCircuitBootstrapPrivateFunctionalPackingKeyswitchKeys32,
         LweCircuitBootstrapPrivateFunctionalPackingKeyswitchKeys32,
     > for CudaEngine
 {
     fn convert_lwe_circuit_bootstrap_private_functional_packing_keyswitch_keys(
-        &mut self,
+        &self,
         input: &CudaLweCircuitBootstrapPrivateFunctionalPackingKeyswitchKeys32,
     ) -> Result<
         LweCircuitBootstrapPrivateFunctionalPackingKeyswitchKeys32,
-        LweCircuitBootstrapPrivateFunctionalPackingKeyswitchKeysConversionError<CudaError>,
+        LweCircuitBootstrapPrivateFunctionalPackingKeyswitchKeysConversionGpuError<CudaError>,
     > {
         Ok(unsafe {
             self.convert_lwe_circuit_bootstrap_private_functional_packing_keyswitch_keys_unchecked(
@@ -103,7 +103,7 @@ impl
     }
 
     unsafe fn convert_lwe_circuit_bootstrap_private_functional_packing_keyswitch_keys_unchecked(
-        &mut self,
+        &self,
         input: &CudaLweCircuitBootstrapPrivateFunctionalPackingKeyswitchKeys32,
     ) -> LweCircuitBootstrapPrivateFunctionalPackingKeyswitchKeys32 {
         let data_per_gpu = input.decomposition_level_count().0
@@ -132,17 +132,17 @@ impl
 }
 
 impl
-    LweCircuitBootstrapPrivateFunctionalPackingKeyswitchKeysConversionEngine<
+    LweCircuitBootstrapPrivateFunctionalPackingKeyswitchKeysConversionGpuEngine<
         LweCircuitBootstrapPrivateFunctionalPackingKeyswitchKeys64,
         CudaLweCircuitBootstrapPrivateFunctionalPackingKeyswitchKeys64,
     > for CudaEngine
 {
     fn convert_lwe_circuit_bootstrap_private_functional_packing_keyswitch_keys(
-        &mut self,
+        &self,
         input: &LweCircuitBootstrapPrivateFunctionalPackingKeyswitchKeys64,
     ) -> Result<
         CudaLweCircuitBootstrapPrivateFunctionalPackingKeyswitchKeys64,
-        LweCircuitBootstrapPrivateFunctionalPackingKeyswitchKeysConversionError<CudaError>,
+        LweCircuitBootstrapPrivateFunctionalPackingKeyswitchKeysConversionGpuError<CudaError>,
     > {
         for stream in self.streams.iter() {
             let data_per_gpu = input.decomposition_level_count().0
@@ -161,7 +161,7 @@ impl
     }
 
     unsafe fn convert_lwe_circuit_bootstrap_private_functional_packing_keyswitch_keys_unchecked(
-        &mut self,
+        &self,
         input: &LweCircuitBootstrapPrivateFunctionalPackingKeyswitchKeys64,
     ) -> CudaLweCircuitBootstrapPrivateFunctionalPackingKeyswitchKeys64 {
         // Copy the entire input vector over all GPUs
@@ -193,17 +193,17 @@ impl
 }
 
 impl
-    LweCircuitBootstrapPrivateFunctionalPackingKeyswitchKeysConversionEngine<
+    LweCircuitBootstrapPrivateFunctionalPackingKeyswitchKeysConversionGpuEngine<
         CudaLweCircuitBootstrapPrivateFunctionalPackingKeyswitchKeys64,
         LweCircuitBootstrapPrivateFunctionalPackingKeyswitchKeys64,
     > for CudaEngine
 {
     fn convert_lwe_circuit_bootstrap_private_functional_packing_keyswitch_keys(
-        &mut self,
+        &self,
         input: &CudaLweCircuitBootstrapPrivateFunctionalPackingKeyswitchKeys64,
     ) -> Result<
         LweCircuitBootstrapPrivateFunctionalPackingKeyswitchKeys64,
-        LweCircuitBootstrapPrivateFunctionalPackingKeyswitchKeysConversionError<CudaError>,
+        LweCircuitBootstrapPrivateFunctionalPackingKeyswitchKeysConversionGpuError<CudaError>,
     > {
         Ok(unsafe {
             self.convert_lwe_circuit_bootstrap_private_functional_packing_keyswitch_keys_unchecked(
@@ -213,7 +213,7 @@ impl
     }
 
     unsafe fn convert_lwe_circuit_bootstrap_private_functional_packing_keyswitch_keys_unchecked(
-        &mut self,
+        &self,
         input: &CudaLweCircuitBootstrapPrivateFunctionalPackingKeyswitchKeys64,
     ) -> LweCircuitBootstrapPrivateFunctionalPackingKeyswitchKeys64 {
         let data_per_gpu = input.decomposition_level_count().0

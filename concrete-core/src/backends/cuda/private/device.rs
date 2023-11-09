@@ -33,7 +33,9 @@ impl CudaStream {
         if gpu_index.0 >= unsafe { cuda_get_number_of_gpus() } as usize {
             Err(CudaError::InvalidDeviceIndex(gpu_index))
         } else {
-            let stream = Arc::new(RwLock::new(StreamPointer(unsafe { cuda_create_stream(gpu_index.0 as u32) })));
+            let stream = Arc::new(RwLock::new(StreamPointer(unsafe {
+                cuda_create_stream(gpu_index.0 as u32)
+            })));
             Ok(CudaStream { gpu_index, stream })
         }
     }
@@ -82,7 +84,8 @@ impl CudaStream {
         T: Numeric,
     {
         let size = elements as u64 * std::mem::size_of::<T>() as u64;
-        let ptr = unsafe { cuda_malloc_async(size, self.stream_handle().0, self.gpu_index().0 as u32) };
+        let ptr =
+            unsafe { cuda_malloc_async(size, self.stream_handle().0, self.gpu_index().0 as u32) };
         self.synchronize_stream();
         CudaVec {
             ptr: Arc::new(RwLock::new(CPointer(ptr))),

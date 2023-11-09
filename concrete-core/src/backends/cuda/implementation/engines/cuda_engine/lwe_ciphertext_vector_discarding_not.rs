@@ -10,21 +10,23 @@ impl LweCiphertextVectorDiscardingNotEngine<CudaLweCiphertextVector32, CudaLweCi
     for CudaEngine
 {
     fn discard_not_lwe_ciphertext_vector(
-        &mut self,
+        &self,
         output: &mut CudaLweCiphertextVector32,
         input: &CudaLweCiphertextVector32,
+        stream_idx: usize,
     ) -> Result<(), LweCiphertextVectorDiscardingNotError<CudaError>> {
         LweCiphertextVectorDiscardingNotError::perform_generic_checks(output, input)?;
-        unsafe { self.discard_not_lwe_ciphertext_vector_unchecked(output, input) };
+        unsafe { self.discard_not_lwe_ciphertext_vector_unchecked(output, input, stream_idx) };
         Ok(())
     }
 
     unsafe fn discard_not_lwe_ciphertext_vector_unchecked(
-        &mut self,
+        &self,
         output: &mut CudaLweCiphertextVector32,
         input: &CudaLweCiphertextVector32,
+        stream_idx: usize,
     ) {
-        self.streams[self.get_curr_stream_idx()]
+        self.streams[stream_idx]
             .write()
             .unwrap()
             .discard_not_amortized_lwe_ciphertext_vector::<u32>(

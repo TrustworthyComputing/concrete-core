@@ -14,11 +14,11 @@ use crate::prelude::{
     LweCiphertextVectorMutView64, LweCiphertextVectorView32, LweCiphertextVectorView64,
 };
 use crate::specification::engines::{
-    LweCiphertextVectorConversionEngine, LweCiphertextVectorConversionError,
+    LweCiphertextVectorConversionGpuEngine, LweCiphertextVectorConversionGpuError,
 };
 use crate::specification::entities::LweCiphertextVectorEntity;
 
-impl From<CudaError> for LweCiphertextVectorConversionError<CudaError> {
+impl From<CudaError> for LweCiphertextVectorConversionGpuError<CudaError> {
     fn from(err: CudaError) -> Self {
         Self::Engine(err)
     }
@@ -30,7 +30,7 @@ impl From<CudaError> for LweCiphertextVectorConversionError<CudaError> {
 /// The input ciphertext vector is split over GPUs, so that each GPU contains
 /// the total amount of ciphertexts divided by the number of GPUs on the machine.
 /// The last GPU takes the remainder of the division if there is any.
-impl LweCiphertextVectorConversionEngine<LweCiphertextVector32, CudaLweCiphertextVector32>
+impl LweCiphertextVectorConversionGpuEngine<LweCiphertextVector32, CudaLweCiphertextVector32>
     for CudaEngine
 {
     /// # Example
@@ -68,9 +68,9 @@ impl LweCiphertextVectorConversionEngine<LweCiphertextVector32, CudaLweCiphertex
     /// # }
     /// ```
     fn convert_lwe_ciphertext_vector(
-        &mut self,
+        &self,
         input: &LweCiphertextVector32,
-    ) -> Result<CudaLweCiphertextVector32, LweCiphertextVectorConversionError<CudaError>> {
+    ) -> Result<CudaLweCiphertextVector32, LweCiphertextVectorConversionGpuError<CudaError>> {
         let number_of_gpus = number_of_active_gpus(
             self.get_number_of_gpus(),
             CiphertextCount(input.lwe_ciphertext_count().0),
@@ -90,7 +90,7 @@ impl LweCiphertextVectorConversionEngine<LweCiphertextVector32, CudaLweCiphertex
     }
 
     unsafe fn convert_lwe_ciphertext_vector_unchecked(
-        &mut self,
+        &self,
         input: &LweCiphertextVector32,
     ) -> CudaLweCiphertextVector32 {
         let vecs = copy_lwe_ciphertext_vector_from_cpu_to_gpu::<u32, _>(
@@ -109,7 +109,7 @@ impl LweCiphertextVectorConversionEngine<LweCiphertextVector32, CudaLweCiphertex
 /// # Description
 /// Convert an LWE ciphertext vector with 32 bits of precision from GPU to CPU.
 /// The data from each GPU is copied into a part of an LweCiphertextVector32 on the CPU.
-impl LweCiphertextVectorConversionEngine<CudaLweCiphertextVector32, LweCiphertextVector32>
+impl LweCiphertextVectorConversionGpuEngine<CudaLweCiphertextVector32, LweCiphertextVector32>
     for CudaEngine
 {
     /// # Example
@@ -150,14 +150,14 @@ impl LweCiphertextVectorConversionEngine<CudaLweCiphertextVector32, LweCiphertex
     /// # }
     /// ```
     fn convert_lwe_ciphertext_vector(
-        &mut self,
+        &self,
         input: &CudaLweCiphertextVector32,
-    ) -> Result<LweCiphertextVector32, LweCiphertextVectorConversionError<CudaError>> {
+    ) -> Result<LweCiphertextVector32, LweCiphertextVectorConversionGpuError<CudaError>> {
         Ok(unsafe { self.convert_lwe_ciphertext_vector_unchecked(input) })
     }
 
     unsafe fn convert_lwe_ciphertext_vector_unchecked(
-        &mut self,
+        &self,
         input: &CudaLweCiphertextVector32,
     ) -> LweCiphertextVector32 {
         let output = copy_lwe_ciphertext_vector_from_gpu_to_cpu::<u32>(
@@ -178,7 +178,7 @@ impl LweCiphertextVectorConversionEngine<CudaLweCiphertextVector32, LweCiphertex
 /// The input ciphertext vector is split over GPUs, so that each GPU contains
 /// the total amount of ciphertexts divided by the number of GPUs on the machine.
 /// The last GPU takes the remainder of the division if there is any.
-impl LweCiphertextVectorConversionEngine<LweCiphertextVector64, CudaLweCiphertextVector64>
+impl LweCiphertextVectorConversionGpuEngine<LweCiphertextVector64, CudaLweCiphertextVector64>
     for CudaEngine
 {
     /// # Example
@@ -216,9 +216,9 @@ impl LweCiphertextVectorConversionEngine<LweCiphertextVector64, CudaLweCiphertex
     /// # }
     /// ```
     fn convert_lwe_ciphertext_vector(
-        &mut self,
+        &self,
         input: &LweCiphertextVector64,
-    ) -> Result<CudaLweCiphertextVector64, LweCiphertextVectorConversionError<CudaError>> {
+    ) -> Result<CudaLweCiphertextVector64, LweCiphertextVectorConversionGpuError<CudaError>> {
         let number_of_gpus = number_of_active_gpus(
             self.get_number_of_gpus(),
             CiphertextCount(input.lwe_ciphertext_count().0),
@@ -238,7 +238,7 @@ impl LweCiphertextVectorConversionEngine<LweCiphertextVector64, CudaLweCiphertex
     }
 
     unsafe fn convert_lwe_ciphertext_vector_unchecked(
-        &mut self,
+        &self,
         input: &LweCiphertextVector64,
     ) -> CudaLweCiphertextVector64 {
         let vecs = copy_lwe_ciphertext_vector_from_cpu_to_gpu::<u64, _>(
@@ -257,7 +257,7 @@ impl LweCiphertextVectorConversionEngine<LweCiphertextVector64, CudaLweCiphertex
 /// # Description
 /// Convert an LWE ciphertext vector with 64 bits of precision from GPU to CPU.
 /// The data from each GPU is copied into a part of an LweCiphertextVector64 on the CPU.
-impl LweCiphertextVectorConversionEngine<CudaLweCiphertextVector64, LweCiphertextVector64>
+impl LweCiphertextVectorConversionGpuEngine<CudaLweCiphertextVector64, LweCiphertextVector64>
     for CudaEngine
 {
     /// # Example
@@ -298,14 +298,14 @@ impl LweCiphertextVectorConversionEngine<CudaLweCiphertextVector64, LweCiphertex
     /// # }
     /// ```
     fn convert_lwe_ciphertext_vector(
-        &mut self,
+        &self,
         input: &CudaLweCiphertextVector64,
-    ) -> Result<LweCiphertextVector64, LweCiphertextVectorConversionError<CudaError>> {
+    ) -> Result<LweCiphertextVector64, LweCiphertextVectorConversionGpuError<CudaError>> {
         Ok(unsafe { self.convert_lwe_ciphertext_vector_unchecked(input) })
     }
 
     unsafe fn convert_lwe_ciphertext_vector_unchecked(
-        &mut self,
+        &self,
         input: &CudaLweCiphertextVector64,
     ) -> LweCiphertextVector64 {
         let output = copy_lwe_ciphertext_vector_from_gpu_to_cpu::<u64>(
@@ -326,7 +326,8 @@ impl LweCiphertextVectorConversionEngine<CudaLweCiphertextVector64, LweCiphertex
 /// The input ciphertext vector view is split over GPUs, so that each GPU contains
 /// the total amount of ciphertexts divided by the number of GPUs on the machine.
 /// The last GPU takes the remainder of the division if there is any.
-impl LweCiphertextVectorConversionEngine<LweCiphertextVectorView32<'_>, CudaLweCiphertextVector32>
+impl
+    LweCiphertextVectorConversionGpuEngine<LweCiphertextVectorView32<'_>, CudaLweCiphertextVector32>
     for CudaEngine
 {
     /// # Example
@@ -371,9 +372,9 @@ impl LweCiphertextVectorConversionEngine<LweCiphertextVectorView32<'_>, CudaLweC
     /// # }
     /// ```
     fn convert_lwe_ciphertext_vector(
-        &mut self,
+        &self,
         input: &LweCiphertextVectorView32,
-    ) -> Result<CudaLweCiphertextVector32, LweCiphertextVectorConversionError<CudaError>> {
+    ) -> Result<CudaLweCiphertextVector32, LweCiphertextVectorConversionGpuError<CudaError>> {
         let number_of_gpus = number_of_active_gpus(
             self.get_number_of_gpus(),
             CiphertextCount(input.lwe_ciphertext_count().0),
@@ -393,7 +394,7 @@ impl LweCiphertextVectorConversionEngine<LweCiphertextVectorView32<'_>, CudaLweC
     }
 
     unsafe fn convert_lwe_ciphertext_vector_unchecked(
-        &mut self,
+        &self,
         input: &LweCiphertextVectorView32,
     ) -> CudaLweCiphertextVector32 {
         let vecs = copy_lwe_ciphertext_vector_from_cpu_to_gpu::<u32, _>(
@@ -415,7 +416,8 @@ impl LweCiphertextVectorConversionEngine<LweCiphertextVectorView32<'_>, CudaLweC
 /// The input ciphertext vector view is split over GPUs, so that each GPU contains
 /// the total amount of ciphertexts divided by the number of GPUs on the machine.
 /// The last GPU takes the remainder of the division if there is any.
-impl LweCiphertextVectorConversionEngine<LweCiphertextVectorView64<'_>, CudaLweCiphertextVector64>
+impl
+    LweCiphertextVectorConversionGpuEngine<LweCiphertextVectorView64<'_>, CudaLweCiphertextVector64>
     for CudaEngine
 {
     /// # Example
@@ -460,9 +462,9 @@ impl LweCiphertextVectorConversionEngine<LweCiphertextVectorView64<'_>, CudaLweC
     /// # }
     /// ```
     fn convert_lwe_ciphertext_vector(
-        &mut self,
+        &self,
         input: &LweCiphertextVectorView64,
-    ) -> Result<CudaLweCiphertextVector64, LweCiphertextVectorConversionError<CudaError>> {
+    ) -> Result<CudaLweCiphertextVector64, LweCiphertextVectorConversionGpuError<CudaError>> {
         let number_of_gpus = number_of_active_gpus(
             self.get_number_of_gpus(),
             CiphertextCount(input.lwe_ciphertext_count().0),
@@ -482,7 +484,7 @@ impl LweCiphertextVectorConversionEngine<LweCiphertextVectorView64<'_>, CudaLweC
     }
 
     unsafe fn convert_lwe_ciphertext_vector_unchecked(
-        &mut self,
+        &self,
         input: &LweCiphertextVectorView64,
     ) -> CudaLweCiphertextVector64 {
         let vecs = copy_lwe_ciphertext_vector_from_cpu_to_gpu::<u64, _>(
@@ -504,8 +506,10 @@ impl LweCiphertextVectorConversionEngine<LweCiphertextVectorView64<'_>, CudaLweC
 /// the total amount of ciphertexts divided by the number of GPUs on the machine.
 /// The last GPU takes the remainder of the division if there is any.
 impl
-    LweCiphertextVectorConversionEngine<LweCiphertextVectorMutView32<'_>, CudaLweCiphertextVector32>
-    for CudaEngine
+    LweCiphertextVectorConversionGpuEngine<
+        LweCiphertextVectorMutView32<'_>,
+        CudaLweCiphertextVector32,
+    > for CudaEngine
 {
     /// # Example
     /// ```
@@ -549,9 +553,9 @@ impl
     /// # }
     /// ```
     fn convert_lwe_ciphertext_vector(
-        &mut self,
+        &self,
         input: &LweCiphertextVectorMutView32,
-    ) -> Result<CudaLweCiphertextVector32, LweCiphertextVectorConversionError<CudaError>> {
+    ) -> Result<CudaLweCiphertextVector32, LweCiphertextVectorConversionGpuError<CudaError>> {
         let number_of_gpus = number_of_active_gpus(
             self.get_number_of_gpus(),
             CiphertextCount(input.lwe_ciphertext_count().0),
@@ -571,7 +575,7 @@ impl
     }
 
     unsafe fn convert_lwe_ciphertext_vector_unchecked(
-        &mut self,
+        &self,
         input: &LweCiphertextVectorMutView32,
     ) -> CudaLweCiphertextVector32 {
         let vecs = copy_lwe_ciphertext_vector_from_cpu_to_gpu::<u32, _>(
@@ -594,8 +598,10 @@ impl
 /// the total amount of ciphertexts divided by the number of GPUs on the machine.
 /// The last GPU takes the remainder of the division if there is any.
 impl
-    LweCiphertextVectorConversionEngine<LweCiphertextVectorMutView64<'_>, CudaLweCiphertextVector64>
-    for CudaEngine
+    LweCiphertextVectorConversionGpuEngine<
+        LweCiphertextVectorMutView64<'_>,
+        CudaLweCiphertextVector64,
+    > for CudaEngine
 {
     /// # Example
     /// ```
@@ -639,9 +645,9 @@ impl
     /// # }
     /// ```
     fn convert_lwe_ciphertext_vector(
-        &mut self,
+        &self,
         input: &LweCiphertextVectorMutView64,
-    ) -> Result<CudaLweCiphertextVector64, LweCiphertextVectorConversionError<CudaError>> {
+    ) -> Result<CudaLweCiphertextVector64, LweCiphertextVectorConversionGpuError<CudaError>> {
         let number_of_gpus = number_of_active_gpus(
             self.get_number_of_gpus(),
             CiphertextCount(input.lwe_ciphertext_count().0),
@@ -661,7 +667,7 @@ impl
     }
 
     unsafe fn convert_lwe_ciphertext_vector_unchecked(
-        &mut self,
+        &self,
         input: &LweCiphertextVectorMutView64,
     ) -> CudaLweCiphertextVector64 {
         let vecs = copy_lwe_ciphertext_vector_from_cpu_to_gpu::<u64, _>(

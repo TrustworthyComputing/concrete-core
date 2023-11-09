@@ -6,10 +6,10 @@ use crate::backends::cuda::implementation::entities::{
 };
 use crate::backends::cuda::private::crypto::keyswitch::execute_lwe_ciphertext_vector_keyswitch_on_gpu;
 use crate::specification::engines::{
-    LweCiphertextVectorDiscardingKeyswitchEngine, LweCiphertextVectorDiscardingKeyswitchError,
+    LweCiphertextVectorDiscardingKeyswitchGpuEngine, LweCiphertextVectorDiscardingKeyswitchGpuError,
 };
 
-impl From<CudaError> for LweCiphertextVectorDiscardingKeyswitchError<CudaError> {
+impl From<CudaError> for LweCiphertextVectorDiscardingKeyswitchGpuError<CudaError> {
     fn from(err: CudaError) -> Self {
         Self::Engine(err)
     }
@@ -18,7 +18,7 @@ impl From<CudaError> for LweCiphertextVectorDiscardingKeyswitchError<CudaError> 
 /// # Description
 /// A discard keyswitch on a vector of input ciphertext vectors with 32 bits of precision.
 impl
-    LweCiphertextVectorDiscardingKeyswitchEngine<
+    LweCiphertextVectorDiscardingKeyswitchGpuEngine<
         CudaLweKeyswitchKey32,
         CudaLweCiphertextVector32,
         CudaLweCiphertextVector32,
@@ -101,26 +101,28 @@ impl
     /// # }
     /// ```
     fn discard_keyswitch_lwe_ciphertext_vector(
-        &mut self,
+        &self,
         output: &mut CudaLweCiphertextVector32,
         input: &CudaLweCiphertextVector32,
         ksk: &CudaLweKeyswitchKey32,
-    ) -> Result<(), LweCiphertextVectorDiscardingKeyswitchError<CudaError>> {
-        LweCiphertextVectorDiscardingKeyswitchError::perform_generic_checks(output, input, ksk)?;
-        unsafe { self.discard_keyswitch_lwe_ciphertext_vector_unchecked(output, input, ksk) };
+        stream_idx: usize,
+    ) -> Result<(), LweCiphertextVectorDiscardingKeyswitchGpuError<CudaError>> {
+        LweCiphertextVectorDiscardingKeyswitchGpuError::perform_generic_checks(output, input, ksk)?;
+        unsafe {
+            self.discard_keyswitch_lwe_ciphertext_vector_unchecked(output, input, ksk, stream_idx)
+        };
         Ok(())
     }
 
     unsafe fn discard_keyswitch_lwe_ciphertext_vector_unchecked(
-        &mut self,
+        &self,
         output: &mut CudaLweCiphertextVector32,
         input: &CudaLweCiphertextVector32,
         ksk: &CudaLweKeyswitchKey32,
+        stream_idx: usize,
     ) {
         execute_lwe_ciphertext_vector_keyswitch_on_gpu::<u32>(
-            &*self.get_cuda_streams()[self.get_curr_stream_idx()]
-                .write()
-                .unwrap(),
+            &*self.get_cuda_streams()[stream_idx].write().unwrap(),
             &mut output.0,
             &input.0,
             &ksk.0,
@@ -132,7 +134,7 @@ impl
 /// # Description
 /// A discard keyswitch on a vector of input ciphertext vectors with 64 bits of precision.
 impl
-    LweCiphertextVectorDiscardingKeyswitchEngine<
+    LweCiphertextVectorDiscardingKeyswitchGpuEngine<
         CudaLweKeyswitchKey64,
         CudaLweCiphertextVector64,
         CudaLweCiphertextVector64,
@@ -215,26 +217,28 @@ impl
     /// # }
     /// ```
     fn discard_keyswitch_lwe_ciphertext_vector(
-        &mut self,
+        &self,
         output: &mut CudaLweCiphertextVector64,
         input: &CudaLweCiphertextVector64,
         ksk: &CudaLweKeyswitchKey64,
-    ) -> Result<(), LweCiphertextVectorDiscardingKeyswitchError<CudaError>> {
-        LweCiphertextVectorDiscardingKeyswitchError::perform_generic_checks(output, input, ksk)?;
-        unsafe { self.discard_keyswitch_lwe_ciphertext_vector_unchecked(output, input, ksk) };
+        stream_idx: usize,
+    ) -> Result<(), LweCiphertextVectorDiscardingKeyswitchGpuError<CudaError>> {
+        LweCiphertextVectorDiscardingKeyswitchGpuError::perform_generic_checks(output, input, ksk)?;
+        unsafe {
+            self.discard_keyswitch_lwe_ciphertext_vector_unchecked(output, input, ksk, stream_idx)
+        };
         Ok(())
     }
 
     unsafe fn discard_keyswitch_lwe_ciphertext_vector_unchecked(
-        &mut self,
+        &self,
         output: &mut CudaLweCiphertextVector64,
         input: &CudaLweCiphertextVector64,
         ksk: &CudaLweKeyswitchKey64,
+        stream_idx: usize,
     ) {
         execute_lwe_ciphertext_vector_keyswitch_on_gpu::<u64>(
-            &*self.get_cuda_streams()[self.get_curr_stream_idx()]
-                .write()
-                .unwrap(),
+            &*self.get_cuda_streams()[stream_idx].write().unwrap(),
             &mut output.0,
             &input.0,
             &ksk.0,

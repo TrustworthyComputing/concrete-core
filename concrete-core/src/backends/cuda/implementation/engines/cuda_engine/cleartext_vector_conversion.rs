@@ -10,21 +10,21 @@ use crate::backends::cuda::private::{compute_number_of_samples_on_gpu, number_of
 use crate::commons::crypto::encoding::CleartextList;
 use crate::prelude::{CiphertextCount, CleartextVector32, CleartextVector64};
 use crate::specification::engines::{
-    CleartextVectorConversionEngine, CleartextVectorConversionError,
+    CleartextVectorConversionGpuEngine, CleartextVectorConversionGpuError,
 };
 use crate::specification::entities::CleartextVectorEntity;
 
-impl From<CudaError> for CleartextVectorConversionError<CudaError> {
+impl From<CudaError> for CleartextVectorConversionGpuError<CudaError> {
     fn from(err: CudaError) -> Self {
         Self::Engine(err)
     }
 }
 
-impl CleartextVectorConversionEngine<CleartextVector32, CudaCleartextVector32> for CudaEngine {
+impl CleartextVectorConversionGpuEngine<CleartextVector32, CudaCleartextVector32> for CudaEngine {
     fn convert_cleartext_vector(
-        &mut self,
+        &self,
         input: &CleartextVector32,
-    ) -> Result<CudaCleartextVector32, CleartextVectorConversionError<CudaError>> {
+    ) -> Result<CudaCleartextVector32, CleartextVectorConversionGpuError<CudaError>> {
         let number_of_gpus = number_of_active_gpus(
             self.get_number_of_gpus(),
             CiphertextCount(input.cleartext_count().0),
@@ -44,7 +44,7 @@ impl CleartextVectorConversionEngine<CleartextVector32, CudaCleartextVector32> f
     }
 
     unsafe fn convert_cleartext_vector_unchecked(
-        &mut self,
+        &self,
         input: &CleartextVector32,
     ) -> CudaCleartextVector32 {
         let vecs = copy_cleartext_vector_from_cpu_to_gpu::<u32, _>(
@@ -59,16 +59,16 @@ impl CleartextVectorConversionEngine<CleartextVector32, CudaCleartextVector32> f
     }
 }
 
-impl CleartextVectorConversionEngine<CudaCleartextVector32, CleartextVector32> for CudaEngine {
+impl CleartextVectorConversionGpuEngine<CudaCleartextVector32, CleartextVector32> for CudaEngine {
     fn convert_cleartext_vector(
-        &mut self,
+        &self,
         input: &CudaCleartextVector32,
-    ) -> Result<CleartextVector32, CleartextVectorConversionError<CudaError>> {
+    ) -> Result<CleartextVector32, CleartextVectorConversionGpuError<CudaError>> {
         Ok(unsafe { self.convert_cleartext_vector_unchecked(input) })
     }
 
     unsafe fn convert_cleartext_vector_unchecked(
-        &mut self,
+        &self,
         input: &CudaCleartextVector32,
     ) -> CleartextVector32 {
         let output = copy_cleartext_vector_from_gpu_to_cpu::<u32>(
@@ -80,11 +80,11 @@ impl CleartextVectorConversionEngine<CudaCleartextVector32, CleartextVector32> f
     }
 }
 
-impl CleartextVectorConversionEngine<CleartextVector64, CudaCleartextVector64> for CudaEngine {
+impl CleartextVectorConversionGpuEngine<CleartextVector64, CudaCleartextVector64> for CudaEngine {
     fn convert_cleartext_vector(
-        &mut self,
+        &self,
         input: &CleartextVector64,
-    ) -> Result<CudaCleartextVector64, CleartextVectorConversionError<CudaError>> {
+    ) -> Result<CudaCleartextVector64, CleartextVectorConversionGpuError<CudaError>> {
         let number_of_gpus = number_of_active_gpus(
             self.get_number_of_gpus(),
             CiphertextCount(input.cleartext_count().0),
@@ -104,7 +104,7 @@ impl CleartextVectorConversionEngine<CleartextVector64, CudaCleartextVector64> f
     }
 
     unsafe fn convert_cleartext_vector_unchecked(
-        &mut self,
+        &self,
         input: &CleartextVector64,
     ) -> CudaCleartextVector64 {
         let vecs = copy_cleartext_vector_from_cpu_to_gpu::<u64, _>(
@@ -119,16 +119,16 @@ impl CleartextVectorConversionEngine<CleartextVector64, CudaCleartextVector64> f
     }
 }
 
-impl CleartextVectorConversionEngine<CudaCleartextVector64, CleartextVector64> for CudaEngine {
+impl CleartextVectorConversionGpuEngine<CudaCleartextVector64, CleartextVector64> for CudaEngine {
     fn convert_cleartext_vector(
-        &mut self,
+        &self,
         input: &CudaCleartextVector64,
-    ) -> Result<CleartextVector64, CleartextVectorConversionError<CudaError>> {
+    ) -> Result<CleartextVector64, CleartextVectorConversionGpuError<CudaError>> {
         Ok(unsafe { self.convert_cleartext_vector_unchecked(input) })
     }
 
     unsafe fn convert_cleartext_vector_unchecked(
-        &mut self,
+        &self,
         input: &CudaCleartextVector64,
     ) -> CleartextVector64 {
         let output = copy_cleartext_vector_from_gpu_to_cpu::<u64>(

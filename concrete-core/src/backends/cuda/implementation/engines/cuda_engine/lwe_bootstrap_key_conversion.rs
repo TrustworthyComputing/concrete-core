@@ -8,12 +8,12 @@ use crate::backends::cuda::private::crypto::bootstrap::{
 };
 use crate::prelude::{LweBootstrapKey32, LweBootstrapKey64};
 use crate::specification::engines::{
-    LweBootstrapKeyConversionEngine, LweBootstrapKeyConversionError,
+    LweBootstrapKeyConversionGpuEngine, LweBootstrapKeyConversionGpuError,
 };
 use crate::specification::entities::LweBootstrapKeyEntity;
 use std::marker::PhantomData;
 
-impl From<CudaError> for LweBootstrapKeyConversionError<CudaError> {
+impl From<CudaError> for LweBootstrapKeyConversionGpuError<CudaError> {
     fn from(err: CudaError) -> Self {
         Self::Engine(err)
     }
@@ -24,7 +24,7 @@ impl From<CudaError> for LweBootstrapKeyConversionError<CudaError> {
 /// The bootstrap key is copied entirely to all the GPUs and converted from the standard to the
 /// Fourier domain.
 
-impl LweBootstrapKeyConversionEngine<LweBootstrapKey32, CudaFourierLweBootstrapKey32>
+impl LweBootstrapKeyConversionGpuEngine<LweBootstrapKey32, CudaFourierLweBootstrapKey32>
     for CudaEngine
 {
     /// # Example
@@ -65,9 +65,9 @@ impl LweBootstrapKeyConversionEngine<LweBootstrapKey32, CudaFourierLweBootstrapK
     /// # }
     /// ```
     fn convert_lwe_bootstrap_key(
-        &mut self,
+        &self,
         input: &LweBootstrapKey32,
-    ) -> Result<CudaFourierLweBootstrapKey32, LweBootstrapKeyConversionError<CudaError>> {
+    ) -> Result<CudaFourierLweBootstrapKey32, LweBootstrapKeyConversionGpuError<CudaError>> {
         let poly_size = input.0.polynomial_size();
         check_poly_size!(poly_size);
         let data_per_gpu = input.glwe_dimension().to_glwe_size().0
@@ -83,7 +83,7 @@ impl LweBootstrapKeyConversionEngine<LweBootstrapKey32, CudaFourierLweBootstrapK
     }
 
     unsafe fn convert_lwe_bootstrap_key_unchecked(
-        &mut self,
+        &self,
         input: &LweBootstrapKey32,
     ) -> CudaFourierLweBootstrapKey32 {
         let vecs = convert_lwe_bootstrap_key_from_cpu_to_gpu::<u32, _>(
@@ -108,7 +108,7 @@ impl LweBootstrapKeyConversionEngine<LweBootstrapKey32, CudaFourierLweBootstrapK
 /// The bootstrap key is copied entirely to all the GPUs and converted from the standard to the
 /// Fourier domain.
 
-impl LweBootstrapKeyConversionEngine<LweBootstrapKey64, CudaFourierLweBootstrapKey64>
+impl LweBootstrapKeyConversionGpuEngine<LweBootstrapKey64, CudaFourierLweBootstrapKey64>
     for CudaEngine
 {
     /// # Example
@@ -149,9 +149,9 @@ impl LweBootstrapKeyConversionEngine<LweBootstrapKey64, CudaFourierLweBootstrapK
     /// # }
     /// ```
     fn convert_lwe_bootstrap_key(
-        &mut self,
+        &self,
         input: &LweBootstrapKey64,
-    ) -> Result<CudaFourierLweBootstrapKey64, LweBootstrapKeyConversionError<CudaError>> {
+    ) -> Result<CudaFourierLweBootstrapKey64, LweBootstrapKeyConversionGpuError<CudaError>> {
         let poly_size = input.0.polynomial_size();
         check_poly_size!(poly_size);
         let data_per_gpu = input.glwe_dimension().to_glwe_size().0
@@ -167,7 +167,7 @@ impl LweBootstrapKeyConversionEngine<LweBootstrapKey64, CudaFourierLweBootstrapK
     }
 
     unsafe fn convert_lwe_bootstrap_key_unchecked(
-        &mut self,
+        &self,
         input: &LweBootstrapKey64,
     ) -> CudaFourierLweBootstrapKey64 {
         let vecs = convert_lwe_bootstrap_key_from_cpu_to_gpu::<u64, _>(

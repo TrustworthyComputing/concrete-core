@@ -17,29 +17,33 @@ impl
     > for CudaEngine
 {
     fn discard_xnor_lwe_ciphertext_vector(
-        &mut self,
+        &self,
         output: &mut CudaLweCiphertextVector32,
         input_1: &CudaLweCiphertextVector32,
         input_2: &CudaLweCiphertextVector32,
         bsk: &CudaFourierLweBootstrapKey32,
         ksk: &CudaLweKeyswitchKey32,
+        stream_idx: usize,
     ) -> Result<(), LweCiphertextVectorDiscardingXnorError<CudaError>> {
         LweCiphertextVectorDiscardingXnorError::perform_generic_checks(output, input_1, input_2)?;
         unsafe {
-            self.discard_xnor_lwe_ciphertext_vector_unchecked(output, input_1, input_2, bsk, ksk)
+            self.discard_xnor_lwe_ciphertext_vector_unchecked(
+                output, input_1, input_2, bsk, ksk, stream_idx,
+            )
         };
         Ok(())
     }
 
     unsafe fn discard_xnor_lwe_ciphertext_vector_unchecked(
-        &mut self,
+        &self,
         output: &mut CudaLweCiphertextVector32,
         input_1: &CudaLweCiphertextVector32,
         input_2: &CudaLweCiphertextVector32,
         bsk: &CudaFourierLweBootstrapKey32,
         ksk: &CudaLweKeyswitchKey32,
+        stream_idx: usize,
     ) {
-        self.streams[self.get_curr_stream_idx()]
+        self.streams[stream_idx]
             .write()
             .unwrap()
             .discard_xnor_amortized_lwe_ciphertext_vector::<u32>(

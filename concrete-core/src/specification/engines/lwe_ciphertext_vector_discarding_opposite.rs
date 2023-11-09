@@ -47,9 +47,10 @@ where
 {
     /// Computes the opposite of an LWE ciphertext vector.
     fn discard_opp_lwe_ciphertext_vector(
-        &mut self,
+        &self,
         output: &mut OutputCiphertextVector,
         input: &InputCiphertextVector,
+        stream_idx: usize,
     ) -> Result<(), LweCiphertextVectorDiscardingOppositeError<Self::EngineError>>;
 
     /// Unsafely computes the opposite of an LWE ciphertext vector.
@@ -59,8 +60,9 @@ where
     /// of [`LweCiphertextVectorDiscardingOppositeError`]. For safety concerns _specific_ to an
     /// engine, refer to the implementer safety section.
     unsafe fn discard_opp_lwe_ciphertext_vector_unchecked(
-        &mut self,
+        &self,
         output: &mut OutputCiphertextVector,
         input: &InputCiphertextVector,
+        stream_idx: usize,
     );
 }

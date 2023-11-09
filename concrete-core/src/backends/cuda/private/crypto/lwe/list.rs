@@ -133,6 +133,7 @@ pub(crate) unsafe fn execute_lwe_ciphertext_vector_opposite_on_gpu<T: UnsignedIn
     output: &mut CudaLweList<T>,
     input: &CudaLweList<T>,
     number_of_available_gpus: NumberOfGpus,
+    stream_idx: usize,
 ) {
     let number_of_gpus = number_of_active_gpus(
         number_of_available_gpus,
@@ -145,7 +146,11 @@ pub(crate) unsafe fn execute_lwe_ciphertext_vector_opposite_on_gpu<T: UnsignedIn
             CiphertextCount(input.lwe_ciphertext_count.0),
             GpuIndex(gpu_index),
         );
-        let stream = &*streams.get(gpu_index).unwrap().write().unwrap();
+        let stream = &*streams
+            .get(stream_idx + gpu_index)
+            .unwrap()
+            .write()
+            .unwrap();
 
         stream.discard_opp_lwe_ciphertext_vector::<T>(
             output.d_vecs.get_mut(gpu_index).unwrap(),
@@ -161,6 +166,7 @@ pub(crate) unsafe fn execute_lwe_ciphertext_vector_addition_on_gpu<T: UnsignedIn
     input_1: &CudaLweList<T>,
     input_2: &CudaLweList<T>,
     number_of_available_gpus: NumberOfGpus,
+    stream_idx: usize,
 ) {
     let number_of_gpus = number_of_active_gpus(
         number_of_available_gpus,
@@ -173,7 +179,11 @@ pub(crate) unsafe fn execute_lwe_ciphertext_vector_addition_on_gpu<T: UnsignedIn
             CiphertextCount(input_1.lwe_ciphertext_count.0),
             GpuIndex(gpu_index),
         );
-        let stream = &streams.get(gpu_index).unwrap().write().unwrap();
+        let stream = &streams
+            .get(stream_idx + gpu_index)
+            .unwrap()
+            .write()
+            .unwrap();
 
         stream.discard_add_lwe_ciphertext_vector::<T>(
             output.d_vecs.get_mut(gpu_index).unwrap(),

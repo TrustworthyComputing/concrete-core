@@ -5,10 +5,11 @@ use crate::backends::cuda::implementation::entities::{
 use crate::backends::cuda::private::crypto::lwe::list::discard_copy_lwe_ciphertext_vector_from_gpu_to_cpu;
 use crate::prelude::{LweCiphertextVectorMutView32, LweCiphertextVectorMutView64};
 use crate::specification::engines::{
-    LweCiphertextVectorDiscardingConversionEngine, LweCiphertextVectorDiscardingConversionError,
+    LweCiphertextVectorDiscardingConversionGpuEngine,
+    LweCiphertextVectorDiscardingConversionGpuError,
 };
 
-impl From<CudaError> for LweCiphertextVectorDiscardingConversionError<CudaError> {
+impl From<CudaError> for LweCiphertextVectorDiscardingConversionGpuError<CudaError> {
     fn from(err: CudaError) -> Self {
         Self::Engine(err)
     }
@@ -18,7 +19,7 @@ impl From<CudaError> for LweCiphertextVectorDiscardingConversionError<CudaError>
 /// Convert an LWE ciphertext vector with 32 bits of precision from GPU to a view on CPU.
 /// The data from each GPU is copied into a part of an LweCiphertextVectorMutView32 on the CPU.
 impl
-    LweCiphertextVectorDiscardingConversionEngine<
+    LweCiphertextVectorDiscardingConversionGpuEngine<
         CudaLweCiphertextVector32,
         LweCiphertextVectorMutView32<'_>,
     > for CudaEngine
@@ -87,16 +88,16 @@ impl
     /// # }
     /// ```
     fn discard_convert_lwe_ciphertext_vector(
-        &mut self,
+        &self,
         output: &mut LweCiphertextVectorMutView32,
         input: &CudaLweCiphertextVector32,
-    ) -> Result<(), LweCiphertextVectorDiscardingConversionError<CudaError>> {
+    ) -> Result<(), LweCiphertextVectorDiscardingConversionGpuError<CudaError>> {
         unsafe { self.discard_convert_lwe_ciphertext_vector_unchecked(output, input) };
         Ok(())
     }
 
     unsafe fn discard_convert_lwe_ciphertext_vector_unchecked(
-        &mut self,
+        &self,
         output: &mut LweCiphertextVectorMutView32,
         input: &CudaLweCiphertextVector32,
     ) {
@@ -113,7 +114,7 @@ impl
 /// Convert an LWE ciphertext vector with 64 bits of precision from GPU to a view on CPU.
 /// The data from each GPU is copied into a part of an LweCiphertextVectorMutView64 on the CPU.
 impl
-    LweCiphertextVectorDiscardingConversionEngine<
+    LweCiphertextVectorDiscardingConversionGpuEngine<
         CudaLweCiphertextVector64,
         LweCiphertextVectorMutView64<'_>,
     > for CudaEngine
@@ -182,16 +183,16 @@ impl
     /// # }
     /// ```
     fn discard_convert_lwe_ciphertext_vector(
-        &mut self,
+        &self,
         output: &mut LweCiphertextVectorMutView64,
         input: &CudaLweCiphertextVector64,
-    ) -> Result<(), LweCiphertextVectorDiscardingConversionError<CudaError>> {
+    ) -> Result<(), LweCiphertextVectorDiscardingConversionGpuError<CudaError>> {
         unsafe { self.discard_convert_lwe_ciphertext_vector_unchecked(output, input) };
         Ok(())
     }
 
     unsafe fn discard_convert_lwe_ciphertext_vector_unchecked(
-        &mut self,
+        &self,
         output: &mut LweCiphertextVectorMutView64,
         input: &CudaLweCiphertextVector64,
     ) {

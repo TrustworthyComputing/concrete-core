@@ -4,12 +4,12 @@ use crate::prelude::{
     CudaError, CudaFourierLweBootstrapKey64, CudaLweCiphertextVector64,
     CudaLweCircuitBootstrapPrivateFunctionalPackingKeyswitchKeys64, CudaPlaintextVector64,
     DecompositionBaseLog, DecompositionLevelCount, LweBootstrapKeyEntity,
-    LweCiphertextVectorDiscardingCircuitBootstrapBooleanVerticalPackingEngine,
-    LweCiphertextVectorDiscardingCircuitBootstrapBooleanVerticalPackingError,
+    LweCiphertextVectorDiscardingCircuitBootstrapBooleanVerticalPackingGpuEngine,
+    LweCiphertextVectorDiscardingCircuitBootstrapBooleanVerticalPackingGpuError,
 };
 
 impl From<CudaError>
-    for LweCiphertextVectorDiscardingCircuitBootstrapBooleanVerticalPackingError<CudaError>
+    for LweCiphertextVectorDiscardingCircuitBootstrapBooleanVerticalPackingGpuError<CudaError>
 {
     fn from(err: CudaError) -> Self {
         Self::Engine(err)
@@ -17,7 +17,7 @@ impl From<CudaError>
 }
 
 impl
-    LweCiphertextVectorDiscardingCircuitBootstrapBooleanVerticalPackingEngine<
+    LweCiphertextVectorDiscardingCircuitBootstrapBooleanVerticalPackingGpuEngine<
         CudaLweCiphertextVector64,
         CudaLweCiphertextVector64,
         CudaFourierLweBootstrapKey64,
@@ -26,7 +26,7 @@ impl
     > for CudaEngine
 {
     fn discard_circuit_bootstrap_boolean_vertical_packing_lwe_ciphertext_vector(
-        &mut self,
+        &self,
         output: &mut CudaLweCiphertextVector64,
         input: &CudaLweCiphertextVector64,
         bsk: &CudaFourierLweBootstrapKey64,
@@ -36,11 +36,13 @@ impl
         cbs_pfpksk: &CudaLweCircuitBootstrapPrivateFunctionalPackingKeyswitchKeys64,
     ) -> Result<
         (),
-        LweCiphertextVectorDiscardingCircuitBootstrapBooleanVerticalPackingError<Self::EngineError>,
+        LweCiphertextVectorDiscardingCircuitBootstrapBooleanVerticalPackingGpuError<
+            Self::EngineError,
+        >,
     > {
         let poly_size = bsk.polynomial_size();
         check_poly_size!(poly_size);
-        LweCiphertextVectorDiscardingCircuitBootstrapBooleanVerticalPackingError::
+        LweCiphertextVectorDiscardingCircuitBootstrapBooleanVerticalPackingGpuError::
         perform_generic_checks(
             input,
             output,
@@ -66,7 +68,7 @@ impl
     }
 
     unsafe fn discard_circuit_bootstrap_boolean_vertical_packing_lwe_ciphertext_vector_unchecked(
-        &mut self,
+        &self,
         output: &mut CudaLweCiphertextVector64,
         input: &CudaLweCiphertextVector64,
         bsk: &CudaFourierLweBootstrapKey64,

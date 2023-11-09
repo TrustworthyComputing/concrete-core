@@ -18,7 +18,6 @@ use std::sync::{Arc, RwLock};
 #[derive(Debug, Clone)]
 pub struct CudaEngine {
     streams: Vec<Arc<RwLock<CudaStream>>>,
-    stream_idx: Arc<RwLock<usize>>,
     max_shared_memory: usize,
     number_of_gpus: usize,
 }
@@ -42,11 +41,9 @@ impl AbstractEngine for CudaEngine {
                 streams.push(Arc::new(RwLock::new(CudaStream::new(GpuIndex(curr_gpu))?)));
             }
             let max_shared_memory = streams[0].read().unwrap().get_max_shared_memory()?;
-            let stream_idx = 0;
 
             Ok(CudaEngine {
                 streams,
-                stream_idx: Arc::new(RwLock::new(stream_idx)),
                 max_shared_memory: max_shared_memory as usize,
                 number_of_gpus: number_of_gpus as usize,
             })
@@ -63,16 +60,6 @@ impl CudaEngine {
     pub fn get_cuda_streams(&self) -> &Vec<Arc<RwLock<CudaStream>>> {
         &self.streams
     }
-    /// Get the current stream index from the engine
-    pub fn get_curr_stream_idx(&self) -> usize {
-        *self.stream_idx.read().unwrap()
-    }
-    /// Increment current stream index
-    pub fn inc_stream_idx(&mut self, amt : usize) {
-        let mut stream_idx = self.stream_idx.write().unwrap();
-        *stream_idx = (*stream_idx + amt) % self.streams.len();
-    }
-
     /// Get the size of the shared memory (on device 0)
     pub fn get_cuda_shared_memory(&self) -> SharedMemoryAmount {
         SharedMemoryAmount(self.max_shared_memory)

@@ -57,18 +57,4 @@ impl AmortizedCudaEngine {
     }
 }
 
-macro_rules! check_poly_size {
-    ($poly_size: ident) => {
-        if $poly_size != 256
-            && $poly_size != 512
-            && $poly_size != 1024
-            && $poly_size != 2048
-            && $poly_size != 4096
-            && $poly_size != 8192
-        {
-            return Err(CudaError::PolynomialSizeNotSupported.into());
-        }
-    };
-}
-
 mod lwe_ciphertext_vector_discarding_bootstrap;

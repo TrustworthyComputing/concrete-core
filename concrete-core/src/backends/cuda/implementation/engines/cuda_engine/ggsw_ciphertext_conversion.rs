@@ -5,11 +5,11 @@ use crate::commons::crypto::ggsw::StandardGgswCiphertext;
 use crate::commons::math::tensor::{AsRefSlice, AsRefTensor};
 use crate::prelude::{GgswCiphertext32, GgswCiphertext64};
 use crate::specification::engines::{
-    GgswCiphertextConversionEngine, GgswCiphertextConversionError,
+    GgswCiphertextConversionGpuEngine, GgswCiphertextConversionGpuError,
 };
 use crate::specification::entities::GgswCiphertextEntity;
 
-impl From<CudaError> for GgswCiphertextConversionError<CudaError> {
+impl From<CudaError> for GgswCiphertextConversionGpuError<CudaError> {
     fn from(err: CudaError) -> Self {
         Self::Engine(err)
     }
@@ -18,7 +18,7 @@ impl From<CudaError> for GgswCiphertextConversionError<CudaError> {
 /// # Description
 /// Convert a GGSW ciphertext with 32 bits of precision from CPU to GPU 0.
 /// Only this conversion is necessary to run the WopPBS on the GPU.
-impl GgswCiphertextConversionEngine<GgswCiphertext32, CudaGgswCiphertext32> for CudaEngine {
+impl GgswCiphertextConversionGpuEngine<GgswCiphertext32, CudaGgswCiphertext32> for CudaEngine {
     /// # Example
     /// ```
     /// use concrete_core::prelude::*;
@@ -62,14 +62,14 @@ impl GgswCiphertextConversionEngine<GgswCiphertext32, CudaGgswCiphertext32> for 
     /// # }
     /// ```
     fn convert_ggsw_ciphertext(
-        &mut self,
+        &self,
         input: &GgswCiphertext32,
-    ) -> Result<CudaGgswCiphertext32, GgswCiphertextConversionError<CudaError>> {
+    ) -> Result<CudaGgswCiphertext32, GgswCiphertextConversionGpuError<CudaError>> {
         Ok(unsafe { self.convert_ggsw_ciphertext_unchecked(input) })
     }
 
     unsafe fn convert_ggsw_ciphertext_unchecked(
-        &mut self,
+        &self,
         input: &GgswCiphertext32,
     ) -> CudaGgswCiphertext32 {
         let stream = self.streams[0].write().unwrap();
@@ -97,7 +97,7 @@ impl GgswCiphertextConversionEngine<GgswCiphertext32, CudaGgswCiphertext32> for 
 /// Convert a GGSW ciphertext vector with 32 bits of precision from GPU 0 to CPU.
 /// This conversion is not necessary to run the bootstrap on the GPU.
 /// It is implemented for testing purposes only.
-impl GgswCiphertextConversionEngine<CudaGgswCiphertext32, GgswCiphertext32> for CudaEngine {
+impl GgswCiphertextConversionGpuEngine<CudaGgswCiphertext32, GgswCiphertext32> for CudaEngine {
     /// # Example
     /// ```
     /// use concrete_core::prelude::*;
@@ -144,14 +144,14 @@ impl GgswCiphertextConversionEngine<CudaGgswCiphertext32, GgswCiphertext32> for 
     /// # }
     /// ```
     fn convert_ggsw_ciphertext(
-        &mut self,
+        &self,
         input: &CudaGgswCiphertext32,
-    ) -> Result<GgswCiphertext32, GgswCiphertextConversionError<CudaError>> {
+    ) -> Result<GgswCiphertext32, GgswCiphertextConversionGpuError<CudaError>> {
         Ok(unsafe { self.convert_ggsw_ciphertext_unchecked(input) })
     }
 
     unsafe fn convert_ggsw_ciphertext_unchecked(
-        &mut self,
+        &self,
         input: &CudaGgswCiphertext32,
     ) -> GgswCiphertext32 {
         // Copy the data from GPU 0 back to the CPU
@@ -174,7 +174,7 @@ impl GgswCiphertextConversionEngine<CudaGgswCiphertext32, GgswCiphertext32> for 
 /// # Description
 /// Convert a GGSW ciphertext with 64 bits of precision from CPU to GPU 0.
 /// Only this conversion is necessary to run the WopPBS on the GPU.
-impl GgswCiphertextConversionEngine<GgswCiphertext64, CudaGgswCiphertext64> for CudaEngine {
+impl GgswCiphertextConversionGpuEngine<GgswCiphertext64, CudaGgswCiphertext64> for CudaEngine {
     /// # Example
     /// ```
     /// use concrete_core::prelude::*;
@@ -218,14 +218,14 @@ impl GgswCiphertextConversionEngine<GgswCiphertext64, CudaGgswCiphertext64> for 
     /// # }
     /// ```
     fn convert_ggsw_ciphertext(
-        &mut self,
+        &self,
         input: &GgswCiphertext64,
-    ) -> Result<CudaGgswCiphertext64, GgswCiphertextConversionError<CudaError>> {
+    ) -> Result<CudaGgswCiphertext64, GgswCiphertextConversionGpuError<CudaError>> {
         Ok(unsafe { self.convert_ggsw_ciphertext_unchecked(input) })
     }
 
     unsafe fn convert_ggsw_ciphertext_unchecked(
-        &mut self,
+        &self,
         input: &GgswCiphertext64,
     ) -> CudaGgswCiphertext64 {
         // Copy the entire input vector over GPU 0
@@ -253,7 +253,7 @@ impl GgswCiphertextConversionEngine<GgswCiphertext64, CudaGgswCiphertext64> for 
 /// Convert a GGSW ciphertext vector with 64 bits of precision from GPU 0 to CPU.
 /// This conversion is not necessary to run the bootstrap on the GPU.
 /// It is implemented for testing purposes only.
-impl GgswCiphertextConversionEngine<CudaGgswCiphertext64, GgswCiphertext64> for CudaEngine {
+impl GgswCiphertextConversionGpuEngine<CudaGgswCiphertext64, GgswCiphertext64> for CudaEngine {
     /// # Example
     /// ```
     /// use concrete_core::prelude::*;
@@ -300,14 +300,14 @@ impl GgswCiphertextConversionEngine<CudaGgswCiphertext64, GgswCiphertext64> for 
     /// # }
     /// ```
     fn convert_ggsw_ciphertext(
-        &mut self,
+        &self,
         input: &CudaGgswCiphertext64,
-    ) -> Result<GgswCiphertext64, GgswCiphertextConversionError<CudaError>> {
+    ) -> Result<GgswCiphertext64, GgswCiphertextConversionGpuError<CudaError>> {
         Ok(unsafe { self.convert_ggsw_ciphertext_unchecked(input) })
     }
 
     unsafe fn convert_ggsw_ciphertext_unchecked(
-        &mut self,
+        &self,
         input: &CudaGgswCiphertext64,
     ) -> GgswCiphertext64 {
         // Copy the data from GPU 0 back to the CPU

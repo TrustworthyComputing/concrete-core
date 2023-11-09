@@ -7,11 +7,11 @@ use crate::backends::cuda::implementation::entities::{
 use crate::backends::cuda::private::device::NumberOfSamples;
 use crate::prelude::LweCiphertextIndex;
 use crate::specification::engines::{
-    LweCiphertextDiscardingBootstrapEngine, LweCiphertextDiscardingBootstrapError,
+    LweCiphertextDiscardingBootstrapGpuEngine, LweCiphertextDiscardingBootstrapGpuError,
 };
 use crate::specification::entities::LweBootstrapKeyEntity;
 
-impl From<CudaError> for LweCiphertextDiscardingBootstrapError<CudaError> {
+impl From<CudaError> for LweCiphertextDiscardingBootstrapGpuError<CudaError> {
     fn from(err: CudaError) -> Self {
         Self::Engine(err)
     }
@@ -21,7 +21,7 @@ impl From<CudaError> for LweCiphertextDiscardingBootstrapError<CudaError> {
 /// A discard bootstrap on an input ciphertext with 32 bits of precision.
 /// The input bootstrap key is in the Fourier domain.
 impl
-    LweCiphertextDiscardingBootstrapEngine<
+    LweCiphertextDiscardingBootstrapGpuEngine<
         CudaFourierLweBootstrapKey32,
         CudaGlweCiphertext32,
         CudaLweCiphertext32,
@@ -110,27 +110,31 @@ impl
     /// # }
     /// ```
     fn discard_bootstrap_lwe_ciphertext(
-        &mut self,
+        &self,
         output: &mut CudaLweCiphertext32,
         input: &CudaLweCiphertext32,
         acc: &CudaGlweCiphertext32,
         bsk: &CudaFourierLweBootstrapKey32,
-    ) -> Result<(), LweCiphertextDiscardingBootstrapError<CudaError>> {
-        LweCiphertextDiscardingBootstrapError::perform_generic_checks(output, input, acc, bsk)?;
+        stream_idx: usize,
+    ) -> Result<(), LweCiphertextDiscardingBootstrapGpuError<CudaError>> {
+        LweCiphertextDiscardingBootstrapGpuError::perform_generic_checks(output, input, acc, bsk)?;
         let poly_size = bsk.polynomial_size();
         check_poly_size!(poly_size);
-        unsafe { self.discard_bootstrap_lwe_ciphertext_unchecked(output, input, acc, bsk) };
+        unsafe {
+            self.discard_bootstrap_lwe_ciphertext_unchecked(output, input, acc, bsk, stream_idx)
+        };
         Ok(())
     }
 
     unsafe fn discard_bootstrap_lwe_ciphertext_unchecked(
-        &mut self,
+        &self,
         output: &mut CudaLweCiphertext32,
         input: &CudaLweCiphertext32,
         acc: &CudaGlweCiphertext32,
         bsk: &CudaFourierLweBootstrapKey32,
+        stream_idx: usize,
     ) {
-        let stream = &self.streams[self.get_curr_stream_idx()];
+        let stream = &self.streams[stream_idx];
         let stream_locked = stream.write().unwrap();
         let mut test_vector_indexes = stream_locked.malloc_async::<u32>(1);
         stream_locked.copy_to_gpu_async(&mut test_vector_indexes, &[0]);
@@ -157,7 +161,7 @@ impl
 /// A discard bootstrap on an input ciphertext with 64 bits of precision.
 /// The input bootstrap key is in the Fourier domain.
 impl
-    LweCiphertextDiscardingBootstrapEngine<
+    LweCiphertextDiscardingBootstrapGpuEngine<
         CudaFourierLweBootstrapKey64,
         CudaGlweCiphertext64,
         CudaLweCiphertext64,
@@ -246,27 +250,31 @@ impl
     /// # }
     /// ```
     fn discard_bootstrap_lwe_ciphertext(
-        &mut self,
+        &self,
         output: &mut CudaLweCiphertext64,
         input: &CudaLweCiphertext64,
         acc: &CudaGlweCiphertext64,
         bsk: &CudaFourierLweBootstrapKey64,
-    ) -> Result<(), LweCiphertextDiscardingBootstrapError<CudaError>> {
-        LweCiphertextDiscardingBootstrapError::perform_generic_checks(output, input, acc, bsk)?;
+        stream_idx: usize,
+    ) -> Result<(), LweCiphertextDiscardingBootstrapGpuError<CudaError>> {
+        LweCiphertextDiscardingBootstrapGpuError::perform_generic_checks(output, input, acc, bsk)?;
         let poly_size = bsk.polynomial_size();
         check_poly_size!(poly_size);
-        unsafe { self.discard_bootstrap_lwe_ciphertext_unchecked(output, input, acc, bsk) };
+        unsafe {
+            self.discard_bootstrap_lwe_ciphertext_unchecked(output, input, acc, bsk, stream_idx)
+        };
         Ok(())
     }
 
     unsafe fn discard_bootstrap_lwe_ciphertext_unchecked(
-        &mut self,
+        &self,
         output: &mut CudaLweCiphertext64,
         input: &CudaLweCiphertext64,
         acc: &CudaGlweCiphertext64,
         bsk: &CudaFourierLweBootstrapKey64,
+        stream_idx: usize,
     ) {
-        let stream = &self.streams[self.get_curr_stream_idx()];
+        let stream = &self.streams[stream_idx];
         let stream_locked = stream.write().unwrap();
         let mut test_vector_indexes = stream_locked.malloc_async::<u64>(1);
         stream_locked.copy_to_gpu_async(&mut test_vector_indexes, &[0]);

@@ -10,11 +10,11 @@ use crate::prelude::{
     GlweCiphertextVectorMutView64, GlweCiphertextVectorView32, GlweCiphertextVectorView64,
 };
 use crate::specification::engines::{
-    GlweCiphertextVectorConversionEngine, GlweCiphertextVectorConversionError,
+    GlweCiphertextVectorConversionGpuEngine, GlweCiphertextVectorConversionGpuError,
 };
 use crate::specification::entities::GlweCiphertextVectorEntity;
 
-impl From<CudaError> for GlweCiphertextVectorConversionError<CudaError> {
+impl From<CudaError> for GlweCiphertextVectorConversionGpuError<CudaError> {
     fn from(err: CudaError) -> Self {
         Self::Engine(err)
     }
@@ -25,7 +25,7 @@ impl From<CudaError> for GlweCiphertextVectorConversionError<CudaError> {
 /// Only this conversion is necessary to run the bootstrap on the GPU.
 /// The whole vector of GLWE ciphertexts is copied to all the GPUS: it corresponds
 /// to the input vector of lookup tables for the bootstrap.
-impl GlweCiphertextVectorConversionEngine<GlweCiphertextVector32, CudaGlweCiphertextVector32>
+impl GlweCiphertextVectorConversionGpuEngine<GlweCiphertextVector32, CudaGlweCiphertextVector32>
     for CudaEngine
 {
     /// # Example
@@ -64,9 +64,9 @@ impl GlweCiphertextVectorConversionEngine<GlweCiphertextVector32, CudaGlweCipher
     /// # }
     /// ```
     fn convert_glwe_ciphertext_vector(
-        &mut self,
+        &self,
         input: &GlweCiphertextVector32,
-    ) -> Result<CudaGlweCiphertextVector32, GlweCiphertextVectorConversionError<CudaError>> {
+    ) -> Result<CudaGlweCiphertextVector32, GlweCiphertextVectorConversionGpuError<CudaError>> {
         for gpu_index in 0..self.get_number_of_gpus().0 {
             let stream = &self.streams[gpu_index].read().unwrap();
             let data_per_gpu = input.glwe_dimension().to_glwe_size().0
@@ -79,7 +79,7 @@ impl GlweCiphertextVectorConversionEngine<GlweCiphertextVector32, CudaGlweCipher
     }
 
     unsafe fn convert_glwe_ciphertext_vector_unchecked(
-        &mut self,
+        &self,
         input: &GlweCiphertextVector32,
     ) -> CudaGlweCiphertextVector32 {
         // Copy the entire input vector over all GPUs
@@ -107,7 +107,7 @@ impl GlweCiphertextVectorConversionEngine<GlweCiphertextVector32, CudaGlweCipher
 /// Convert a GLWE ciphertext vector with 32 bits of precision from GPU to CPU.
 /// This conversion is not necessary to run the bootstrap on the GPU.
 /// It is implemented for testing purposes only.
-impl GlweCiphertextVectorConversionEngine<CudaGlweCiphertextVector32, GlweCiphertextVector32>
+impl GlweCiphertextVectorConversionGpuEngine<CudaGlweCiphertextVector32, GlweCiphertextVector32>
     for CudaEngine
 {
     /// # Example
@@ -149,14 +149,14 @@ impl GlweCiphertextVectorConversionEngine<CudaGlweCiphertextVector32, GlweCipher
     /// # }
     /// ```
     fn convert_glwe_ciphertext_vector(
-        &mut self,
+        &self,
         input: &CudaGlweCiphertextVector32,
-    ) -> Result<GlweCiphertextVector32, GlweCiphertextVectorConversionError<CudaError>> {
+    ) -> Result<GlweCiphertextVector32, GlweCiphertextVectorConversionGpuError<CudaError>> {
         Ok(unsafe { self.convert_glwe_ciphertext_vector_unchecked(input) })
     }
 
     unsafe fn convert_glwe_ciphertext_vector_unchecked(
-        &mut self,
+        &self,
         input: &CudaGlweCiphertextVector32,
     ) -> GlweCiphertextVector32 {
         // Copy the data from GPU 0 back to the CPU
@@ -181,7 +181,7 @@ impl GlweCiphertextVectorConversionEngine<CudaGlweCiphertextVector32, GlweCipher
 /// Only this conversion is necessary to run the bootstrap on the GPU.
 /// The whole vector of GLWE ciphertexts is copied to all the GPUS: it corresponds
 /// to the input vector of lookup tables for the bootstrap.
-impl GlweCiphertextVectorConversionEngine<GlweCiphertextVector64, CudaGlweCiphertextVector64>
+impl GlweCiphertextVectorConversionGpuEngine<GlweCiphertextVector64, CudaGlweCiphertextVector64>
     for CudaEngine
 {
     /// # Example
@@ -220,9 +220,9 @@ impl GlweCiphertextVectorConversionEngine<GlweCiphertextVector64, CudaGlweCipher
     /// # }
     /// ```
     fn convert_glwe_ciphertext_vector(
-        &mut self,
+        &self,
         input: &GlweCiphertextVector64,
-    ) -> Result<CudaGlweCiphertextVector64, GlweCiphertextVectorConversionError<CudaError>> {
+    ) -> Result<CudaGlweCiphertextVector64, GlweCiphertextVectorConversionGpuError<CudaError>> {
         for gpu_index in 0..self.get_number_of_gpus().0 {
             let stream = &self.streams[gpu_index].read().unwrap();
             let data_per_gpu = input.glwe_dimension().to_glwe_size().0
@@ -235,7 +235,7 @@ impl GlweCiphertextVectorConversionEngine<GlweCiphertextVector64, CudaGlweCipher
     }
 
     unsafe fn convert_glwe_ciphertext_vector_unchecked(
-        &mut self,
+        &self,
         input: &GlweCiphertextVector64,
     ) -> CudaGlweCiphertextVector64 {
         // Copy the entire input vector over all GPUs
@@ -263,7 +263,7 @@ impl GlweCiphertextVectorConversionEngine<GlweCiphertextVector64, CudaGlweCipher
 /// Convert a GLWE ciphertext vector with 64 bits of precision from GPU to CPU.
 /// This conversion is not necessary to run the bootstrap on the GPU.
 /// It is implemented for testing purposes only.
-impl GlweCiphertextVectorConversionEngine<CudaGlweCiphertextVector64, GlweCiphertextVector64>
+impl GlweCiphertextVectorConversionGpuEngine<CudaGlweCiphertextVector64, GlweCiphertextVector64>
     for CudaEngine
 {
     /// # Example
@@ -305,14 +305,14 @@ impl GlweCiphertextVectorConversionEngine<CudaGlweCiphertextVector64, GlweCipher
     /// # }
     /// ```
     fn convert_glwe_ciphertext_vector(
-        &mut self,
+        &self,
         input: &CudaGlweCiphertextVector64,
-    ) -> Result<GlweCiphertextVector64, GlweCiphertextVectorConversionError<CudaError>> {
+    ) -> Result<GlweCiphertextVector64, GlweCiphertextVectorConversionGpuError<CudaError>> {
         Ok(unsafe { self.convert_glwe_ciphertext_vector_unchecked(input) })
     }
 
     unsafe fn convert_glwe_ciphertext_vector_unchecked(
-        &mut self,
+        &self,
         input: &CudaGlweCiphertextVector64,
     ) -> GlweCiphertextVector64 {
         // Copy the data from GPU 0 back to the CPU
@@ -337,8 +337,10 @@ impl GlweCiphertextVectorConversionEngine<CudaGlweCiphertextVector64, GlweCipher
 /// The whole vector of GLWE ciphertexts is copied to all the GPUS: it corresponds
 /// to the input vector of lookup tables for the bootstrap.
 impl
-    GlweCiphertextVectorConversionEngine<GlweCiphertextVectorView32<'_>, CudaGlweCiphertextVector32>
-    for CudaEngine
+    GlweCiphertextVectorConversionGpuEngine<
+        GlweCiphertextVectorView32<'_>,
+        CudaGlweCiphertextVector32,
+    > for CudaEngine
 {
     /// # Example
     /// ```
@@ -385,9 +387,9 @@ impl
     /// # }
     /// ```
     fn convert_glwe_ciphertext_vector(
-        &mut self,
+        &self,
         input: &GlweCiphertextVectorView32,
-    ) -> Result<CudaGlweCiphertextVector32, GlweCiphertextVectorConversionError<CudaError>> {
+    ) -> Result<CudaGlweCiphertextVector32, GlweCiphertextVectorConversionGpuError<CudaError>> {
         for gpu_index in 0..self.get_number_of_gpus().0 {
             let stream = &self.streams[gpu_index].read().unwrap();
             let data_per_gpu = input.glwe_dimension().to_glwe_size().0
@@ -400,7 +402,7 @@ impl
     }
 
     unsafe fn convert_glwe_ciphertext_vector_unchecked(
-        &mut self,
+        &self,
         input: &GlweCiphertextVectorView32,
     ) -> CudaGlweCiphertextVector32 {
         // Copy the entire input vector over all GPUs
@@ -429,8 +431,10 @@ impl
 /// The whole vector of GLWE ciphertexts is copied to all the GPUS: it corresponds
 /// to the input vector of lookup tables for the bootstrap.
 impl
-    GlweCiphertextVectorConversionEngine<GlweCiphertextVectorView64<'_>, CudaGlweCiphertextVector64>
-    for CudaEngine
+    GlweCiphertextVectorConversionGpuEngine<
+        GlweCiphertextVectorView64<'_>,
+        CudaGlweCiphertextVector64,
+    > for CudaEngine
 {
     /// # Example
     /// ```
@@ -477,9 +481,9 @@ impl
     /// # }
     /// ```
     fn convert_glwe_ciphertext_vector(
-        &mut self,
+        &self,
         input: &GlweCiphertextVectorView64,
-    ) -> Result<CudaGlweCiphertextVector64, GlweCiphertextVectorConversionError<CudaError>> {
+    ) -> Result<CudaGlweCiphertextVector64, GlweCiphertextVectorConversionGpuError<CudaError>> {
         for gpu_index in 0..self.get_number_of_gpus().0 {
             let stream = &self.streams[gpu_index].read().unwrap();
             let data_per_gpu = input.glwe_dimension().to_glwe_size().0
@@ -492,7 +496,7 @@ impl
     }
 
     unsafe fn convert_glwe_ciphertext_vector_unchecked(
-        &mut self,
+        &self,
         input: &GlweCiphertextVectorView64,
     ) -> CudaGlweCiphertextVector64 {
         // Copy the entire input vector over all GPUs
@@ -521,7 +525,7 @@ impl
 /// The whole vector of GLWE ciphertexts is copied to all the GPUS: it corresponds
 /// to the input vector of lookup tables for the bootstrap.
 impl
-    GlweCiphertextVectorConversionEngine<
+    GlweCiphertextVectorConversionGpuEngine<
         GlweCiphertextVectorMutView32<'_>,
         CudaGlweCiphertextVector32,
     > for CudaEngine
@@ -585,9 +589,9 @@ impl
     /// # }
     /// ```
     fn convert_glwe_ciphertext_vector(
-        &mut self,
+        &self,
         input: &GlweCiphertextVectorMutView32,
-    ) -> Result<CudaGlweCiphertextVector32, GlweCiphertextVectorConversionError<CudaError>> {
+    ) -> Result<CudaGlweCiphertextVector32, GlweCiphertextVectorConversionGpuError<CudaError>> {
         for gpu_index in 0..self.get_number_of_gpus().0 {
             let stream = &self.streams[gpu_index].read().unwrap();
             let data_per_gpu = input.glwe_dimension().to_glwe_size().0
@@ -600,7 +604,7 @@ impl
     }
 
     unsafe fn convert_glwe_ciphertext_vector_unchecked(
-        &mut self,
+        &self,
         input: &GlweCiphertextVectorMutView32,
     ) -> CudaGlweCiphertextVector32 {
         // Copy the entire input vector over all GPUs
@@ -629,7 +633,7 @@ impl
 /// The whole vector of GLWE ciphertexts is copied to all the GPUS: it corresponds
 /// to the input vector of lookup tables for the bootstrap.
 impl
-    GlweCiphertextVectorConversionEngine<
+    GlweCiphertextVectorConversionGpuEngine<
         GlweCiphertextVectorMutView64<'_>,
         CudaGlweCiphertextVector64,
     > for CudaEngine
@@ -693,9 +697,9 @@ impl
     /// # }
     /// ```
     fn convert_glwe_ciphertext_vector(
-        &mut self,
+        &self,
         input: &GlweCiphertextVectorMutView64,
-    ) -> Result<CudaGlweCiphertextVector64, GlweCiphertextVectorConversionError<CudaError>> {
+    ) -> Result<CudaGlweCiphertextVector64, GlweCiphertextVectorConversionGpuError<CudaError>> {
         for gpu_index in 0..self.get_number_of_gpus().0 {
             let stream = &self.streams[gpu_index].read().unwrap();
             let data_per_gpu = input.glwe_dimension().to_glwe_size().0
@@ -708,7 +712,7 @@ impl
     }
 
     unsafe fn convert_glwe_ciphertext_vector_unchecked(
-        &mut self,
+        &self,
         input: &GlweCiphertextVectorMutView64,
     ) -> CudaGlweCiphertextVector64 {
         // Copy the entire input vector over all GPUs

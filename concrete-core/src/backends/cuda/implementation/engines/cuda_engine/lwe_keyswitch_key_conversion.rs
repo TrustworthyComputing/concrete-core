@@ -8,11 +8,11 @@ use crate::commons::crypto::lwe::LweKeyswitchKey;
 use crate::commons::math::tensor::{AsRefSlice, AsRefTensor};
 use crate::prelude::{LweKeyswitchKey32, LweKeyswitchKey64};
 use crate::specification::engines::{
-    LweKeyswitchKeyConversionEngine, LweKeyswitchKeyConversionError,
+    LweKeyswitchKeyConversionGpuEngine, LweKeyswitchKeyConversionGpuError,
 };
 use crate::specification::entities::LweKeyswitchKeyEntity;
 
-impl From<CudaError> for LweKeyswitchKeyConversionError<CudaError> {
+impl From<CudaError> for LweKeyswitchKeyConversionGpuError<CudaError> {
     fn from(err: CudaError) -> Self {
         Self::Engine(err)
     }
@@ -23,7 +23,7 @@ impl From<CudaError> for LweKeyswitchKeyConversionError<CudaError> {
 /// We only support the conversion from CPU to GPU: the conversion from GPU to CPU is not
 /// necessary at this stage to support the keyswitch. The keyswitch key is copied entirely to all
 /// the GPUs.
-impl LweKeyswitchKeyConversionEngine<LweKeyswitchKey32, CudaLweKeyswitchKey32> for CudaEngine {
+impl LweKeyswitchKeyConversionGpuEngine<LweKeyswitchKey32, CudaLweKeyswitchKey32> for CudaEngine {
     /// # Example
     /// ```
     /// use concrete_core::backends::cuda::private::device::GpuIndex;
@@ -67,9 +67,9 @@ impl LweKeyswitchKeyConversionEngine<LweKeyswitchKey32, CudaLweKeyswitchKey32> f
     /// # }
     /// ```
     fn convert_lwe_keyswitch_key(
-        &mut self,
+        &self,
         input: &LweKeyswitchKey32,
-    ) -> Result<CudaLweKeyswitchKey32, LweKeyswitchKeyConversionError<CudaError>> {
+    ) -> Result<CudaLweKeyswitchKey32, LweKeyswitchKeyConversionGpuError<CudaError>> {
         for gpu_index in 0..self.get_number_of_gpus().0 {
             let stream = &self.streams[gpu_index];
             let data_per_gpu = input.decomposition_level_count().0
@@ -82,7 +82,7 @@ impl LweKeyswitchKeyConversionEngine<LweKeyswitchKey32, CudaLweKeyswitchKey32> f
     }
 
     unsafe fn convert_lwe_keyswitch_key_unchecked(
-        &mut self,
+        &self,
         input: &LweKeyswitchKey32,
     ) -> CudaLweKeyswitchKey32 {
         // Copy the entire input vector over all GPUs
@@ -111,7 +111,7 @@ impl LweKeyswitchKeyConversionEngine<LweKeyswitchKey32, CudaLweKeyswitchKey32> f
 /// Convert an LWE keyswitch key corresponding to 32 bits of precision from the GPU to the CPU.
 /// We assume consistency between all the available GPUs and simply copy what is in the one with
 /// index 0.
-impl LweKeyswitchKeyConversionEngine<CudaLweKeyswitchKey32, LweKeyswitchKey32> for CudaEngine {
+impl LweKeyswitchKeyConversionGpuEngine<CudaLweKeyswitchKey32, LweKeyswitchKey32> for CudaEngine {
     /// # Example
     /// ```
     /// use concrete_core::backends::cuda::private::device::GpuIndex;
@@ -157,14 +157,14 @@ impl LweKeyswitchKeyConversionEngine<CudaLweKeyswitchKey32, LweKeyswitchKey32> f
     /// # }
     /// ```
     fn convert_lwe_keyswitch_key(
-        &mut self,
+        &self,
         input: &CudaLweKeyswitchKey32,
-    ) -> Result<LweKeyswitchKey32, LweKeyswitchKeyConversionError<CudaError>> {
+    ) -> Result<LweKeyswitchKey32, LweKeyswitchKeyConversionGpuError<CudaError>> {
         Ok(unsafe { self.convert_lwe_keyswitch_key_unchecked(input) })
     }
 
     unsafe fn convert_lwe_keyswitch_key_unchecked(
-        &mut self,
+        &self,
         input: &CudaLweKeyswitchKey32,
     ) -> LweKeyswitchKey32 {
         let data_per_gpu = input.decomposition_level_count().0
@@ -190,7 +190,7 @@ impl LweKeyswitchKeyConversionEngine<CudaLweKeyswitchKey32, LweKeyswitchKey32> f
 /// We only support the conversion from CPU to GPU: the conversion from GPU to CPU is not
 /// necessary at this stage to support the keyswitch. The keyswitch key is copied entirely to all
 /// the GPUs.
-impl LweKeyswitchKeyConversionEngine<LweKeyswitchKey64, CudaLweKeyswitchKey64> for CudaEngine {
+impl LweKeyswitchKeyConversionGpuEngine<LweKeyswitchKey64, CudaLweKeyswitchKey64> for CudaEngine {
     /// # Example
     /// ```
     /// use concrete_core::backends::cuda::private::device::GpuIndex;
@@ -234,9 +234,9 @@ impl LweKeyswitchKeyConversionEngine<LweKeyswitchKey64, CudaLweKeyswitchKey64> f
     /// # }
     /// ```
     fn convert_lwe_keyswitch_key(
-        &mut self,
+        &self,
         input: &LweKeyswitchKey64,
-    ) -> Result<CudaLweKeyswitchKey64, LweKeyswitchKeyConversionError<CudaError>> {
+    ) -> Result<CudaLweKeyswitchKey64, LweKeyswitchKeyConversionGpuError<CudaError>> {
         for stream in self.streams.iter() {
             let data_per_gpu = input.decomposition_level_count().0
                 * input.output_lwe_dimension().to_lwe_size().0
@@ -248,7 +248,7 @@ impl LweKeyswitchKeyConversionEngine<LweKeyswitchKey64, CudaLweKeyswitchKey64> f
     }
 
     unsafe fn convert_lwe_keyswitch_key_unchecked(
-        &mut self,
+        &self,
         input: &LweKeyswitchKey64,
     ) -> CudaLweKeyswitchKey64 {
         // Copy the entire input vector over all GPUs
@@ -273,7 +273,7 @@ impl LweKeyswitchKeyConversionEngine<LweKeyswitchKey64, CudaLweKeyswitchKey64> f
     }
 }
 
-impl LweKeyswitchKeyConversionEngine<CudaLweKeyswitchKey64, LweKeyswitchKey64> for CudaEngine {
+impl LweKeyswitchKeyConversionGpuEngine<CudaLweKeyswitchKey64, LweKeyswitchKey64> for CudaEngine {
     /// # Example
     /// ```
     /// use concrete_core::backends::cuda::private::device::GpuIndex;
@@ -319,14 +319,14 @@ impl LweKeyswitchKeyConversionEngine<CudaLweKeyswitchKey64, LweKeyswitchKey64> f
     /// # }
     /// ```
     fn convert_lwe_keyswitch_key(
-        &mut self,
+        &self,
         input: &CudaLweKeyswitchKey64,
-    ) -> Result<LweKeyswitchKey64, LweKeyswitchKeyConversionError<CudaError>> {
+    ) -> Result<LweKeyswitchKey64, LweKeyswitchKeyConversionGpuError<CudaError>> {
         Ok(unsafe { self.convert_lwe_keyswitch_key_unchecked(input) })
     }
 
     unsafe fn convert_lwe_keyswitch_key_unchecked(
-        &mut self,
+        &self,
         input: &CudaLweKeyswitchKey64,
     ) -> LweKeyswitchKey64 {
         let data_per_gpu = input.decomposition_level_count().0
